@@ -3,7 +3,8 @@
  * Uses gemini-3.5-flash — best stable model for coding and agentic tasks
  */
 
-const GEMINI_API_BASE = 'https://generativelanguage.googleapis.com/v1beta/models'
+// Proxied through Vite dev server — see vite.config.js
+const GEMINI_API_BASE = '/api/gemini/v1beta/models'
 const MODEL = 'gemini-3.5-flash'
 
 const API_KEY = import.meta.env.VITE_GEMINI_API_KEY
@@ -80,7 +81,7 @@ export async function generateRepoAnalysis(repoData) {
 
 // ─── Prompts ──────────────────────────────────────────────────────────────────
 
-function buildDeepMissionPrompt(task, sourceContext, filePaths) {
+export function buildDeepMissionPrompt(task, sourceContext, filePaths) {
   return `You are Waypoint, an elite AI developer context engine.
 You have actively read the source code of the most critical files for the developer's task.
 
@@ -230,7 +231,7 @@ Respond with ONLY valid JSON:
 
 // ─── Core API call ─────────────────────────────────────────────────────────────
 
-async function callGemini(prompt) {
+export async function callGemini(prompt) {
   if (!API_KEY || API_KEY === 'your_gemini_api_key_here') {
     throw new Error('GEMINI_API_KEY not configured. Add it to your .env file.')
   }

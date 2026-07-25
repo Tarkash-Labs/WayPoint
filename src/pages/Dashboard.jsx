@@ -44,6 +44,7 @@ export default function Dashboard() {
   const [isRepoLoading, setIsRepoLoading] = useState(true)
   const [isTaskLoading, setIsTaskLoading] = useState(false)
   const [error, setError] = useState(null)
+  const [taskError, setTaskError] = useState(null)
   const [repoName, setRepoName] = useState('')
 
   // ── Phase 1: Load + analyse the repository ─────────────────────────────────
@@ -87,17 +88,23 @@ export default function Dashboard() {
           await sleep(400)
           setAnalysisStage('hotspots')
           
-          // Trigger the Knowledge Document embedding index build
-          await buildKnowledgeIndex(localRepo)
+          // Trigger the Knowledge Document embedding index build (non-blocking)
+          try {
+            await buildKnowledgeIndex(localRepo)
+          } catch (indexErr) {
+            console.warn('[Dashboard] Local knowledge index build failed:', indexErr.message)
+          }
           
           await sleep(400)
           setAnalysisStage('done')
           await sleep(400)
           
-          // Fake AI enrichment for phase 1 demo (we'll implement real one later)
+          const totalLOC = localRepo.files.reduce((s, f) => s + (f.linesOfCode || 0), 0)
+          
+          // Build enriched data for local workspace
           setEnrichedData({
-            repo: { name: localRepo.repoName, description: 'Local Workspace', stars: 0, issues: 0 },
-            files: localRepo.files.map(f => ({ ...f, riskScore: 1 })),
+            repo: { name: localRepo.repoName, description: 'Local Workspace', stars: 0, issues: 0, totalFiles: localRepo.files.length, totalLOC },
+            files: localRepo.files.map(f => ({ ...f, riskScore: f.riskScore || 1 })),
             directories: localRepo.directories,
             onboarding: { role: 'Local Developer', goal: 'Build amazing things', context: 'Local environment active.' },
             tasks: {}
@@ -137,15 +144,24 @@ export default function Dashboard() {
         setAnalysisStage('dirs')
         await sleep(400) // let the UI render the dir stage
 
-        // Stage 6: AI enrichment
+        // Stage 6: AI enrichment (resilient — if Gemini fails, we still show the dashboard)
         setAnalysisStage('ai')
-        const aiAnalysis = await generateRepoAnalysis(rawData)
+        let aiAnalysis = { hotspots: [], onboarding: null }
+        try {
+          aiAnalysis = await generateRepoAnalysis(rawData)
+        } catch (aiErr) {
+          console.warn('[Dashboard] AI enrichment failed, continuing with base data:', aiErr.message)
+        }
 
         // Stage 7: hotspots & semantic indexing
         setAnalysisStage('hotspots')
         
-        // Trigger the Knowledge Document embedding index build
-        await buildKnowledgeIndex(rawData)
+        // Trigger the Knowledge Document embedding index build (non-blocking)
+        try {
+          await buildKnowledgeIndex(rawData)
+        } catch (indexErr) {
+          console.warn('[Dashboard] Knowledge index build failed, semantic search unavailable:', indexErr.message)
+        }
         
         await sleep(300)
 
@@ -183,6 +199,7 @@ export default function Dashboard() {
     if (!enrichedData) return
     setIsTaskLoading(true)
     setSelectedTask(null)
+    setTaskError(null)
 
     try {
       // Check if we have pre-computed data for this task (mock fallback)
@@ -211,7 +228,8 @@ export default function Dashboard() {
 
       setActiveView('mission')
     } catch (err) {
-      setError(`Mission Brief failed: ${err.message}`)
+      console.error('[Dashboard] Mission Brief failed:', err)
+      setTaskError(`Mission Brief failed: ${err.message}`)
     } finally {
       setIsTaskLoading(false)
     }
@@ -268,8 +286,33 @@ export default function Dashboard() {
           <div className="analyzing__spinner" />
           <div className="analyzing__text">Preparing your mission brief...</div>
           <div className="analyzing__subtext">
-            Gemini is analyzing task scope, identifying relevant files, checking for known traps
+            AI is analyzing task scope, identifying relevant files, checking for known traps
           </div>
+        </div>
+      )
+    }
+
+    // Task-level error (non-fatal — stays in dashboard)
+    if (taskError) {
+      return (
+        <div className="analyzing">
+          <div style={{ fontSize: '48px', marginBottom: '16px' }}>
+            <i className="bx bx-error-circle" style={{ color: 'var(--color-warning)' }} />
+          </div>
+          <div className="analyzing__text">{taskError}</div>
+          <div className="analyzing__subtext" style={{ marginBottom: '16px' }}>
+            The AI providers could not generate a mission brief. Check the browser console for details.
+          </div>
+          <button
+            onClick={() => { setTaskError(null); setActiveView('task'); }}
+            style={{
+              padding: '8px 24px', background: 'var(--color-accent)', color: 'white',
+              border: 'none', borderRadius: 'var(--radius-md)', cursor: 'pointer',
+              fontWeight: 600, fontFamily: 'var(--font-sans)', fontSize: '14px'
+            }}
+          >
+            Try Again
+          </button>
         </div>
       )
     }

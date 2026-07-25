@@ -54,11 +54,11 @@ async function fetchSourceCode(repoData, filePath) {
         }
       }
     } else {
-      const owner = repoData.repo.full_name.split('/')[0]
-      const repo = repoData.repo.name
-      const branch = repoData.repo.default_branch || 'main'
+      // repoData.repo.name is in 'owner/repo' format (set by buildRepoData)
+      const [owner, repo] = repoData.repo.name.split('/')
+      const branch = repoData.repo.defaultBranch || 'main'
       
-      const res = await fetch(`https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${filePath}`)
+      const res = await fetch(`/api/raw-github/${owner}/${repo}/${branch}/${filePath}`)
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       return await res.text()
     }

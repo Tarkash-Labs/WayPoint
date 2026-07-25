@@ -3,7 +3,8 @@
  * Fetches real repository data - no auth token required for public repos
  */
 
-const GITHUB_API = 'https://api.github.com'
+// Proxied through Vite dev server — see vite.config.js
+const GITHUB_API = '/api/github'
 
 /**
  * Parse a GitHub URL into owner + repo

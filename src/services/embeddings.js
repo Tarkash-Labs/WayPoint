@@ -3,7 +3,8 @@
  * Uses NVIDIA NIM `nv-embedcode-7b-v1` for semantic retrieval.
  */
 
-const NVIDIA_NIM_API_BASE = 'https://integrate.api.nvidia.com/v1/embeddings'
+// Proxied through Vite dev server — see vite.config.js
+const NVIDIA_NIM_API_BASE = '/api/nvidia/v1/embeddings'
 const MODEL = 'nvidia/nv-embedcode-7b-v1'
 
 const API_KEY = import.meta.env.VITE_NVIDIA_NIM_API_KEY
