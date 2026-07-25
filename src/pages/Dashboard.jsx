@@ -55,11 +55,56 @@ export default function Dashboard() {
     setError(null)
 
     try {
-      // Stage 1: parse URL
       setAnalysisStage('fetch')
+      
+      // Phase 1: Local Folder Drop support
+      if (repoUrl === 'local://workspace') {
+        const { getCachedLocalRepo } = await import('../services/localFs')
+        const localRepo = getCachedLocalRepo()
+        
+        if (localRepo) {
+          setRepoName(localRepo.repoName)
+          
+          // Show the animated sequence
+          setAnalysisStage('tree')
+          await sleep(400)
+          setAnalysisStage('analyze')
+          await sleep(400)
+          setAnalysisStage('dirs')
+          
+          // Build basic directory groups for local files
+          const dirMap = {}
+          localRepo.files.forEach(f => {
+            const dir = f.path.split('/')[0] || 'root'
+            dirMap[dir] = true
+          })
+          localRepo.directories = Object.keys(dirMap).map(name => ({ name, files: [] }))
+          
+          setRepoData(localRepo)
+          
+          setAnalysisStage('ai')
+          await sleep(400)
+          setAnalysisStage('hotspots')
+          await sleep(400)
+          setAnalysisStage('done')
+          await sleep(400)
+          
+          // Fake AI enrichment for phase 1 demo (we'll implement real one later)
+          setEnrichedData({
+            repo: { name: localRepo.repoName, description: 'Local Workspace', stars: 0, issues: 0 },
+            files: localRepo.files.map(f => ({ ...f, riskScore: 1 })),
+            directories: localRepo.directories,
+            onboarding: { role: 'Local Developer', goal: 'Build amazing things', context: 'Local environment active.' },
+            tasks: {}
+          })
+          setIsRepoLoading(false)
+          return
+        }
+      }
+
       let owner, repo
 
-      if (repoUrl) {
+      if (repoUrl && repoUrl !== 'local://workspace') {
         try {
           ;({ owner, repo } = parseGitHubUrl(repoUrl))
         } catch {

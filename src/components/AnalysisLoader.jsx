@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react'
 
 const STAGES = [
-  { id: 'fetch',    icon: 'bx-cloud-download', label: 'Fetching repository...' },
-  { id: 'tree',     icon: 'bx-git-branch',     label: 'Mapping file structure' },
-  { id: 'analyze',  icon: 'bx-search-alt',     label: 'Running static analysis' },
-  { id: 'dirs',     icon: 'bx-folder-open',    label: 'Understanding architecture' },
-  { id: 'ai',       icon: 'bx-brain',          label: 'AI enrichment with Gemini' },
-  { id: 'hotspots', icon: 'bxs-flame',         label: 'Detecting risk hotspots' },
-  { id: 'done',     icon: 'bx-check-circle',   label: 'Building context engine' },
+  { id: 'fetch', label: 'Understanding repository...', icon: 'bx-cloud-download' },
+  { id: 'tree', label: 'Framework detected', icon: 'bx-git-branch' },
+  { id: 'analyze', label: 'Dependency graph built', icon: 'bx-search-alt' },
+  { id: 'dirs', label: 'Candidate files ranked', icon: 'bx-folder-open' },
+  { id: 'ai', label: 'Reading source code', icon: 'bx-brain' },
+  { id: 'hotspots', icon: 'bxs-flame',         label: 'Generating mission plan' },
+  { id: 'done',     icon: 'bx-check-circle',   label: 'Ready' },
 ]
 
 export default function AnalysisLoader({ currentStage, repoName, error }) {

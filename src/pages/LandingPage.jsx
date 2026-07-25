@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { selectLocalDirectory } from '../services/localFs'
 
 const EXAMPLES = [
   { label: 'expressjs/express', url: 'https://github.com/expressjs/express' },
@@ -10,6 +11,7 @@ const EXAMPLES = [
 export default function LandingPage() {
   const [repoUrl, setRepoUrl] = useState('')
   const [error, setError] = useState('')
+  const [isLocalLoading, setIsLocalLoading] = useState(false)
   const navigate = useNavigate()
 
   const handleAnalyze = (e) => {
@@ -30,6 +32,25 @@ export default function LandingPage() {
     navigate('/dashboard', { state: { repoUrl: url } })
   }
 
+  const handleLocalProject = async () => {
+    try {
+      setError('')
+      setIsLocalLoading(true)
+      const localRepoData = await selectLocalDirectory()
+      
+      if (localRepoData) {
+        // We pass a special local flag. The dashboard will pick it up from the cache.
+        navigate('/dashboard', { state: { repoUrl: 'local://workspace' } })
+      } else {
+        setIsLocalLoading(false)
+      }
+    } catch (err) {
+      console.error(err)
+      setError('Could not read local folder. Please try again or use Chrome/Edge.')
+      setIsLocalLoading(false)
+    }
+  }
+
   return (
     <div className="landing">
       <div className="landing__content">
@@ -38,23 +59,43 @@ export default function LandingPage() {
         </h1>
         <p className="landing__tagline">Every task starts with context.</p>
 
-        <form onSubmit={handleAnalyze}>
-          <div className="landing__input-group">
-            <input
-              type="text"
-              className={`landing__input ${error ? 'landing__input--error' : ''}`}
-              placeholder="github.com/owner/repo"
-              value={repoUrl}
-              onChange={(e) => { setRepoUrl(e.target.value); setError('') }}
-              autoFocus
-              spellCheck={false}
-            />
-            <button type="submit" className="landing__btn">
-              Analyze <i className="bx bx-right-arrow-alt" />
-            </button>
+        <div className="landing__actions">
+          <button 
+            className="landing__btn landing__btn--primary" 
+            onClick={handleLocalProject}
+            disabled={isLocalLoading}
+            style={{ width: '100%', marginBottom: '24px', height: '56px', fontSize: '16px' }}
+          >
+            {isLocalLoading ? (
+              <><i className="bx bx-loader-alt bx-spin" /> Scanning local workspace...</>
+            ) : (
+              <><i className="bx bx-folder-open" /> Open Local Project</>
+            )}
+          </button>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', margin: '16px 0', color: 'var(--color-text-tertiary)', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>
+            <div style={{ flex: 1, height: '1px', background: 'var(--color-border)' }} />
+            or
+            <div style={{ flex: 1, height: '1px', background: 'var(--color-border)' }} />
           </div>
-          {error && <div className="landing__error"><i className="bx bx-error-circle" /> {error}</div>}
-        </form>
+
+          <form onSubmit={handleAnalyze}>
+            <div className="landing__input-group">
+              <input
+                type="text"
+                className={`landing__input ${error ? 'landing__input--error' : ''}`}
+                placeholder="github.com/owner/repo"
+                value={repoUrl}
+                onChange={(e) => { setRepoUrl(e.target.value); setError('') }}
+                spellCheck={false}
+              />
+              <button type="submit" className="landing__btn landing__btn--secondary" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', color: 'var(--color-text-primary)' }}>
+                Analyze <i className="bx bx-right-arrow-alt" />
+              </button>
+            </div>
+            {error && <div className="landing__error"><i className="bx bx-error-circle" /> {error}</div>}
+          </form>
+        </div>
 
         <div className="landing__examples">
           <span>Try a real repo:</span>
