@@ -10,7 +10,7 @@ import MapView from '../views/MapView'
 import AIBar from '../components/AIBar'
 import { parseGitHubUrl, fetchRepoMeta, fetchFileTree, buildRepoData } from '../services/github'
 import { generateRepoAnalysis } from '../services/gemini'
-import { executeDeepReadTask } from '../services/analyzer'
+import { executeDeepReadTask, buildKnowledgeIndex } from '../services/analyzer'
 
 const VIEW_TITLES = {
   task: 'What are you trying to do?',
@@ -86,6 +86,10 @@ export default function Dashboard() {
           setAnalysisStage('ai')
           await sleep(400)
           setAnalysisStage('hotspots')
+          
+          // Trigger the Knowledge Document embedding index build
+          await buildKnowledgeIndex(localRepo)
+          
           await sleep(400)
           setAnalysisStage('done')
           await sleep(400)
@@ -137,8 +141,12 @@ export default function Dashboard() {
         setAnalysisStage('ai')
         const aiAnalysis = await generateRepoAnalysis(rawData)
 
-        // Stage 7: hotspots
+        // Stage 7: hotspots & semantic indexing
         setAnalysisStage('hotspots')
+        
+        // Trigger the Knowledge Document embedding index build
+        await buildKnowledgeIndex(rawData)
+        
         await sleep(300)
 
         setAnalysisStage('done')

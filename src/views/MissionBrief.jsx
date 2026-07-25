@@ -3,14 +3,25 @@ import { useState } from 'react'
 export default function MissionBrief({ task, data }) {
   if (!task || !task.mission) return null
   
-  const { mission, evidence } = task
+  const { mission, evidence, provider } = task
 
   return (
     <div className="mission-brief">
       {/* Header */}
-      <div className="mission-brief__header">
-        <div className="mission-brief__overline">Deep Mission Brief</div>
-        <h2 className="mission-brief__title">{task.name}</h2>
+      <div className="mission-brief__header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        <div>
+          <div className="mission-brief__overline">Deep Mission Brief</div>
+          <h2 className="mission-brief__title">{task.name}</h2>
+        </div>
+        {provider && (
+          <div style={{
+            padding: '4px 8px', background: 'var(--color-bg)', border: '1px solid var(--color-border)', 
+            borderRadius: 'var(--radius-sm)', fontSize: '12px', fontWeight: 'bold', color: 'var(--color-text-secondary)',
+            display: 'flex', alignItems: 'center', gap: '6px'
+          }}>
+            <i className="bx bx-chip" /> {provider}
+          </div>
+        )}
       </div>
 
       {/* Evidence Panel (Replaces Confidence) */}
@@ -42,7 +53,10 @@ export default function MissionBrief({ task, data }) {
       
       {/* Why These Files (Detective Mode) */}
       {evidence && evidence.deepFiles && evidence.deepFiles.length > 0 && (
-        <DetectiveMode files={evidence.deepFiles} />
+        <DetectiveMode 
+          deepFiles={evidence.deepFiles} 
+          relatedFiles={evidence.relatedFiles} 
+        />
       )}
 
       {/* Prerequisites */}
@@ -135,7 +149,7 @@ export default function MissionBrief({ task, data }) {
   )
 }
 
-function DetectiveMode({ files }) {
+function DetectiveMode({ deepFiles, relatedFiles }) {
   const [expanded, setExpanded] = useState(false)
   
   return (
@@ -151,7 +165,7 @@ function DetectiveMode({ files }) {
         }}
       >
         <i className={`bx ${expanded ? 'bx-chevron-up' : 'bx-chevron-down'}`} />
-        WHY THESE FILES?
+        EVIDENCE LOG (SEMANTIC RETRIEVAL)
       </div>
       
       {expanded && (
@@ -159,19 +173,32 @@ function DetectiveMode({ files }) {
           marginTop: '12px', padding: '16px', background: 'var(--color-bg)', border: '1px dashed var(--color-border)',
           borderRadius: 'var(--radius-md)', fontFamily: 'var(--font-mono)', fontSize: '13px', color: 'var(--color-text-secondary)'
         }}>
-          {files.map((file, i) => (
+          <div style={{ fontWeight: 'bold', marginBottom: '8px', color: 'var(--color-text-primary)' }}>DEEP READ (Target Files)</div>
+          {deepFiles.map((file, i) => (
             <div key={file} style={{ display: 'flex', flexDirection: 'column' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <i className="bx bx-file" style={{ color: 'var(--color-accent)' }} /> 
                 <span style={{ color: 'var(--color-text-primary)' }}>{file}</span>
               </div>
-              {i < files.length - 1 && (
+              {i < deepFiles.length - 1 && (
                 <div style={{ padding: '8px 0 8px 6px', color: 'var(--color-border-hover)' }}>
-                  <i className="bx bx-down-arrow-alt" /> structural dependency
+                  <i className="bx bx-link" /> semantic dependency
                 </div>
               )}
             </div>
           ))}
+          
+          {relatedFiles && relatedFiles.length > 0 && (
+            <>
+              <div style={{ fontWeight: 'bold', margin: '24px 0 8px 0', color: 'var(--color-text-primary)' }}>ALSO CONSIDER (Context Files)</div>
+              {relatedFiles.map((file) => (
+                <div key={file} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                  <i className="bx bx-folder-open" style={{ color: 'var(--color-text-secondary)' }} /> 
+                  <span>{file}</span>
+                </div>
+              ))}
+            </>
+          )}
         </div>
       )}
     </div>
