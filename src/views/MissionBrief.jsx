@@ -1,43 +1,52 @@
-export default function MissionBrief({ task, data }) {
-  if (!task) return null
+import { useState } from 'react'
 
-  const riskClass = task.risk === 'High' ? 'risk-high' : task.risk === 'Medium' ? 'risk-medium' : 'risk-low'
+export default function MissionBrief({ task, data }) {
+  if (!task || !task.mission) return null
+  
+  const { mission, evidence } = task
 
   return (
     <div className="mission-brief">
       {/* Header */}
       <div className="mission-brief__header">
-        <div className="mission-brief__overline">Mission Brief</div>
+        <div className="mission-brief__overline">Deep Mission Brief</div>
         <h2 className="mission-brief__title">{task.name}</h2>
-        <p className="mission-brief__summary">{task.summary}</p>
       </div>
 
-      {/* Meta Cards */}
-      <div className="mission-brief__meta">
-        <div className="meta-card">
-          <div className="meta-card__label"><i className="bx bx-check-shield" /> Confidence</div>
-          <div className="meta-card__value meta-card__value--confidence">{task.confidence}%</div>
-          <div className="meta-card__detail">{task.confidenceReason}</div>
+      {/* Evidence Panel (Replaces Confidence) */}
+      {evidence && (
+        <div className="mission-brief__evidence-panel">
+          <div className="evidence-panel__header">
+            <i className="bx bx-check-shield" /> Evidence
+          </div>
+          <div className="evidence-panel__grid">
+            <div className="evidence-item">
+              <i className="bx bx-check" style={{color: 'var(--color-success)'}} />
+              <span><strong>{evidence.filesAnalyzed}</strong> files deeply analyzed</span>
+            </div>
+            <div className="evidence-item">
+              <i className="bx bx-check" style={{color: 'var(--color-success)'}} />
+              <span><strong>{evidence.functionsInspected}</strong> functions inspected</span>
+            </div>
+            <div className="evidence-item">
+              <i className="bx bx-check" style={{color: 'var(--color-success)'}} />
+              <span><strong>{evidence.candidatesRanked}</strong> candidate files ranked</span>
+            </div>
+            <div className="evidence-item">
+              <i className="bx bx-check" style={{color: 'var(--color-success)'}} />
+              <span>Source code extracted structurally</span>
+            </div>
+          </div>
         </div>
-        <div className="meta-card">
-          <div className="meta-card__label"><i className="bx bx-shield-quarter" /> Risk</div>
-          <div className={`meta-card__value meta-card__value--${riskClass}`}>{task.risk}</div>
-          <div className="meta-card__detail">Based on file complexity & incident history</div>
-        </div>
-        <div className="meta-card">
-          <div className="meta-card__label"><i className="bx bx-time-five" /> Est. Effort</div>
-          <div className="meta-card__value">{task.estimatedEffort}</div>
-          <div className="meta-card__detail">Including testing & review</div>
-        </div>
-        <div className="meta-card">
-          <div className="meta-card__label"><i className="bx bx-file" /> Files You'll Touch</div>
-          <div className="meta-card__value">{task.relevantFiles?.length}</div>
-          <div className="meta-card__detail">{task.ignoredCount} files safely ignored</div>
-        </div>
-      </div>
+      )}
+      
+      {/* Why These Files (Detective Mode) */}
+      {evidence && evidence.deepFiles && evidence.deepFiles.length > 0 && (
+        <DetectiveMode files={evidence.deepFiles} />
+      )}
 
       {/* Prerequisites */}
-      {task.prerequisites && task.prerequisites.length > 0 && (
+      {mission.prerequisites && mission.prerequisites.length > 0 && (
         <div className="mission-section">
           <div className="mission-section__header">
             <div className="mission-section__icon mission-section__icon--prereq">
@@ -46,21 +55,10 @@ export default function MissionBrief({ task, data }) {
             <h3 className="mission-section__title">Prerequisites</h3>
             <span className="mission-section__count">Learn these first</span>
           </div>
-          {task.prerequisites.map((prereq, i) => (
+          {mission.prerequisites.map((prereq, i) => (
             <div key={i} className="prereq-card">
               <div className="prereq-card__content">
-                <div className="prereq-card__title">{prereq.concept}</div>
-                <div className="prereq-card__description">{prereq.description}</div>
-                <div className="prereq-card__files">
-                  {prereq.files?.map((f) => (
-                    <span key={f} className="prereq-card__file-tag">
-                      <i className="bx bx-file" /> {f}
-                    </span>
-                  ))}
-                </div>
-              </div>
-              <div className="prereq-card__time">
-                <i className="bx bx-time-five" /> {prereq.estimatedTime}
+                <div className="prereq-card__description">{prereq}</div>
               </div>
             </div>
           ))}
@@ -68,77 +66,45 @@ export default function MissionBrief({ task, data }) {
       )}
 
       {/* Files You'll Touch */}
-      <div className="mission-section">
-        <div className="mission-section__header">
-          <div className="mission-section__icon">
-            <i className="bx bx-folder-open" />
-          </div>
-          <h3 className="mission-section__title">Files You'll Touch</h3>
-          <span className="mission-section__count">{task.relevantFiles?.length} files</span>
-        </div>
-        {task.relevantFiles?.map((file, i) => (
-          <div key={i} className={`file-card ${file.warning ? 'file-card--has-warning' : ''}`}>
-            <div className={`file-card__indicator file-card__indicator--${file.priority}`} />
-            <div className="file-card__content">
-              <div className="file-card__header">
-                <span className="file-card__path">
-                  <i className="bx bx-file" /> {file.path}
-                </span>
-                <span className={`file-card__badge file-card__badge--${file.priority}`}>
-                  {file.priority === 'primary' ? '★ Primary' : 'Secondary'}
-                </span>
-              </div>
-              <div className="file-card__reason">{file.reason}</div>
-              <div className="file-card__meta">
-                <span className="file-card__meta-item">
-                  <i className="bx bx-code-alt" /> {file.linesOfCode} LOC
-                </span>
-                {file.lines && (
-                  <span className="file-card__meta-item">
-                    <i className="bx bx-map-pin" /> Lines {file.lines}
-                  </span>
-                )}
-                <span className="file-card__meta-item" style={{ color: file.riskScore >= 7 ? 'var(--color-danger)' : file.riskScore >= 4 ? 'var(--color-warning)' : 'var(--color-success)' }}>
-                  <i className="bx bx-bolt-circle" /> Risk {file.riskScore}
-                </span>
-              </div>
-              {file.warning && (
-                <div className="file-card__warning">
-                  <i className="bx bx-error" />
-                  <span>{file.warning}</span>
-                </div>
-              )}
+      {mission.filesToTouch && mission.filesToTouch.length > 0 && (
+        <div className="mission-section">
+          <div className="mission-section__header">
+            <div className="mission-section__icon">
+              <i className="bx bx-folder-open" />
             </div>
+            <h3 className="mission-section__title">Files You'll Touch</h3>
+            <span className="mission-section__count">{mission.filesToTouch.length} files</span>
           </div>
-        ))}
-        <div className="mission-section__ignored">
-          <i className="bx bx-hide" /> <strong>{task.ignoredCount} files</strong> in this repository are not relevant to this task
+          {mission.filesToTouch.map((file, i) => (
+            <div key={i} className="file-card">
+              <div className="file-card__indicator file-card__indicator--primary" />
+              <div className="file-card__content">
+                <div className="file-card__header">
+                  <span className="file-card__path">
+                    <i className="bx bx-file" /> {file.path}
+                  </span>
+                </div>
+                <div className="file-card__reason">{file.reason}</div>
+              </div>
+            </div>
+          ))}
         </div>
-      </div>
+      )}
 
       {/* Known Traps */}
-      {task.knownTraps && task.knownTraps.length > 0 && (
+      {mission.knownTraps && mission.knownTraps.length > 0 && (
         <div className="mission-section">
           <div className="mission-section__header">
             <div className="mission-section__icon mission-section__icon--warning">
               <i className="bx bx-shield-x" />
             </div>
             <h3 className="mission-section__title">Known Traps</h3>
-            <span className="mission-section__count">{task.knownTraps.length} warnings</span>
+            <span className="mission-section__count">{mission.knownTraps.length} warnings</span>
           </div>
-          {task.knownTraps.map((trap, i) => (
-            <div key={i} className={`trap-card trap-card--${trap.severity}`}>
-              <div className="trap-card__header">
-                <span className={`trap-card__severity trap-card__severity--${trap.severity}`}>
-                  {trap.severity}
-                </span>
-                <span className="trap-card__title">{trap.title}</span>
-              </div>
-              <div className="trap-card__file"><i className="bx bx-file" /> {trap.file}</div>
-              <div className="trap-card__description">{trap.description}</div>
-              <div className="trap-card__recommendation">
-                <i className="bx bx-bulb" />
-                <span>{trap.recommendation}</span>
+          {mission.knownTraps.map((trap, i) => (
+            <div key={i} className="trap-card trap-card--warning">
+              <div className="trap-card__description">
+                <i className="bx bx-error" /> {trap}
               </div>
             </div>
           ))}
@@ -146,24 +112,66 @@ export default function MissionBrief({ task, data }) {
       )}
 
       {/* Route */}
-      {task.route && task.route.length > 0 && (
+      {mission.routeSteps && mission.routeSteps.length > 0 && (
         <div className="mission-section">
           <div className="mission-section__header">
             <div className="mission-section__icon mission-section__icon--route">
               <i className="bx bx-compass" />
             </div>
             <h3 className="mission-section__title">Route</h3>
-            <span className="mission-section__count">Recommended order</span>
+            <span className="mission-section__count">Recommended execution order</span>
           </div>
           <div className="route-list">
-            {task.route.map((step, i) => (
+            {mission.routeSteps.map((step, i) => (
               <div key={i} className="route-step">
-                <div className="route-step__number">Step {step.order}</div>
-                <div className="route-step__file"><i className="bx bx-file" /> {step.file}</div>
-                <div className="route-step__action">{step.action}</div>
+                <div className="route-step__number">Step {i + 1}</div>
+                <div className="route-step__action">{step}</div>
               </div>
             ))}
           </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function DetectiveMode({ files }) {
+  const [expanded, setExpanded] = useState(false)
+  
+  return (
+    <div className="mission-section">
+      <div 
+        className="detective-mode-trigger" 
+        onClick={() => setExpanded(!expanded)}
+        style={{
+          display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer',
+          padding: '12px 16px', background: 'var(--color-surface)', border: '1px solid var(--color-border)',
+          borderRadius: 'var(--radius-md)', fontWeight: 600, color: 'var(--color-text-primary)',
+          transition: 'all 0.2s'
+        }}
+      >
+        <i className={`bx ${expanded ? 'bx-chevron-up' : 'bx-chevron-down'}`} />
+        WHY THESE FILES?
+      </div>
+      
+      {expanded && (
+        <div className="detective-mode-content" style={{
+          marginTop: '12px', padding: '16px', background: 'var(--color-bg)', border: '1px dashed var(--color-border)',
+          borderRadius: 'var(--radius-md)', fontFamily: 'var(--font-mono)', fontSize: '13px', color: 'var(--color-text-secondary)'
+        }}>
+          {files.map((file, i) => (
+            <div key={file} style={{ display: 'flex', flexDirection: 'column' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <i className="bx bx-file" style={{ color: 'var(--color-accent)' }} /> 
+                <span style={{ color: 'var(--color-text-primary)' }}>{file}</span>
+              </div>
+              {i < files.length - 1 && (
+                <div style={{ padding: '8px 0 8px 6px', color: 'var(--color-border-hover)' }}>
+                  <i className="bx bx-down-arrow-alt" /> structural dependency
+                </div>
+              )}
+            </div>
+          ))}
         </div>
       )}
     </div>

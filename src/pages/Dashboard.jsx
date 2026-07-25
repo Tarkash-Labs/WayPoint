@@ -9,7 +9,8 @@ import HotspotsView from '../views/HotspotsView'
 import MapView from '../views/MapView'
 import AIBar from '../components/AIBar'
 import { parseGitHubUrl, fetchRepoMeta, fetchFileTree, buildRepoData } from '../services/github'
-import { generateMissionBrief, generateRepoAnalysis } from '../services/gemini'
+import { generateRepoAnalysis } from '../services/gemini'
+import { executeDeepReadTask } from '../services/analyzer'
 
 const VIEW_TITLES = {
   task: 'What are you trying to do?',
@@ -183,9 +184,17 @@ export default function Dashboard() {
         await sleep(800) // feel like something is happening
         setSelectedTask({ name: taskName, ...precomputed })
       } else if (repoData) {
-        // Real AI generation
-        const brief = await generateMissionBrief(repoData, taskName)
-        setSelectedTask({ name: taskName, ...brief })
+        // Use the new Deep Read Pipeline
+        const deepReadResult = await executeDeepReadTask(repoData, taskName)
+        
+        setEnrichedData((prev) => ({
+          ...prev,
+          tasks: {
+            ...prev.tasks,
+            [taskName]: deepReadResult,
+          },
+        }))
+        setSelectedTask({ name: taskName, ...deepReadResult })
       } else {
         // Mock data, unknown task — use first available task
         const firstTask = Object.values(enrichedData.tasks || {})[0]

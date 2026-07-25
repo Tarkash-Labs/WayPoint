@@ -9,6 +9,56 @@ const MODEL = 'gemini-3.5-flash'
 const API_KEY = import.meta.env.VITE_GEMINI_API_KEY
 
 /**
+ * 1. Deep Read Phase: Candidate Selection
+ * Picks the absolute best 3-5 files from the pre-filtered top 15.
+ */
+export async function generateCandidateSelection(top15Files, task) {
+  const prompt = `You are an expert AI architect. We are executing this task: "${task}".
+Here are the top 15 most likely candidate files based on keyword matching:
+${top15Files.map(f => `- ${f.path}`).join('\n')}
+
+Select the 3 to 5 MOST CRITICAL files that we must read the source code of to generate a mission plan.
+Respond with ONLY a JSON array of string file paths. Example: ["src/index.js", "src/auth.js"]`
+
+  try {
+    const response = await callGemini(prompt)
+    if (Array.isArray(response)) return response
+    return top15Files.slice(0, 4).map(f => f.path) // Fallback
+  } catch (err) {
+    console.error("Candidate selection failed, using fallback", err)
+    return top15Files.slice(0, 4).map(f => f.path) // Fallback
+  }
+}
+
+/**
+ * 2. Deep Read Phase: Deep Mission Brief Generation
+ * Uses the structurally parsed source code to generate line-number aware plans.
+ */
+export async function generateDeepMissionBrief(task, deepFiles) {
+  const sourceContext = deepFiles.map(f => `
+--- FILE: ${f.path} ---
+IMPORTS:
+${f.structure.imports.join('\n') || '(none)'}
+
+EXPORTS:
+${f.structure.exports.join('\n') || '(none)'}
+
+FUNCTIONS:
+${f.structure.functions.join('\n') || '(none)'}
+
+CLASSES:
+${f.structure.classes.join('\n') || '(none)'}
+
+SOURCE SNIPPET:
+${f.source}
+-----------------------
+  `).join('\n\n')
+
+  const prompt = buildDeepMissionPrompt(task, sourceContext, deepFiles.map(f => f.path))
+  return await callGemini(prompt)
+}
+
+/**
  * Generate a Mission Brief for a specific task against a real repo
  */
 export async function generateMissionBrief(repoData, task) {
@@ -29,6 +79,29 @@ export async function generateRepoAnalysis(repoData) {
 }
 
 // ─── Prompts ──────────────────────────────────────────────────────────────────
+
+function buildDeepMissionPrompt(task, sourceContext, filePaths) {
+  return `You are Waypoint, an elite AI developer context engine.
+You have actively read the source code of the most critical files for the developer's task.
+
+DEVELOPER TASK: "${task}"
+
+DEEP READ SOURCE CODE:
+${sourceContext}
+
+Generate a precise Mission Brief that tells the developer exactly what to do. Because you have the source code, be highly specific. Mention actual function names, classes, and specific architectural files.
+
+Respond with ONLY a valid JSON object matching this schema exactly:
+{
+  "prerequisites": ["List of things they must understand first (e.g., 'This repo uses Redux for state', or 'Authentication is JWT-based')"],
+  "filesToTouch": [
+    { "path": "exact file path", "reason": "Why edit this? Be specific (e.g. 'Update the validateToken function')" }
+  ],
+  "knownTraps": ["List of subtle gotchas or mistakes they might make based on the source code structure (e.g. 'Don't forget to export the new route in index.js')"],
+  "routeSteps": ["Step-by-step action plan to complete the task"]
+}
+NO MARKDOWN BLOCKS. JUST VALID JSON.`
+}
 
 function buildMissionBriefPrompt(repoData, task) {
   const dirSummary = repoData.directories
