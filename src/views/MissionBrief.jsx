@@ -6,19 +6,15 @@ export default function MissionBrief({ task, data }) {
   const { mission, evidence, provider } = task
 
   return (
-    <div className="mission-brief">
-      {/* Header */}
-      <div className="mission-brief__header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-        <div>
-          <div className="mission-brief__overline">Deep Mission Brief</div>
-          <h2 className="mission-brief__title">{task.name}</h2>
+    <div className="hud-mission-brief">
+      {/* Header Panel */}
+      <div className="hud-mission-header">
+        <div className="hud-mission-header__content">
+          <div className="hud-overline"><i className="bx bx-target-lock" /> MISSION BRIEFING</div>
+          <h2 className="hud-mission-title">{task.name}</h2>
         </div>
         {provider && (
-          <div style={{
-            padding: '4px 8px', background: 'var(--color-bg)', border: '1px solid var(--color-border)', 
-            borderRadius: 'var(--radius-sm)', fontSize: '12px', fontWeight: 'bold', color: 'var(--color-text-secondary)',
-            display: 'flex', alignItems: 'center', gap: '6px'
-          }}>
+          <div className="hud-mission-provider">
             <i className="bx bx-chip" /> {provider}
           </div>
         )}
@@ -26,25 +22,25 @@ export default function MissionBrief({ task, data }) {
 
       {/* Evidence Panel (Replaces Confidence) */}
       {evidence && (
-        <div className="mission-brief__evidence-panel">
-          <div className="evidence-panel__header">
-            <i className="bx bx-check-shield" /> Evidence
+        <div className="hud-mission-panel hud-mission-panel--cyan">
+          <div className="hud-panel-header">
+            <i className="bx bx-radar" /> Intelligence Gathering
           </div>
-          <div className="evidence-panel__grid">
-            <div className="evidence-item">
-              <i className="bx bx-check" style={{color: 'var(--color-success)'}} />
-              <span><strong>{evidence.filesAnalyzed}</strong> files deeply analyzed</span>
+          <div className="hud-evidence-grid">
+            <div className="hud-evidence-item">
+              <i className="bx bx-check-circle" />
+              <span><strong className="hud-glow-text">{evidence.filesAnalyzed}</strong> files analyzed</span>
             </div>
-            <div className="evidence-item">
-              <i className="bx bx-check" style={{color: 'var(--color-success)'}} />
-              <span><strong>{evidence.functionsInspected}</strong> functions inspected</span>
+            <div className="hud-evidence-item">
+              <i className="bx bx-check-circle" />
+              <span><strong className="hud-glow-text">{evidence.functionsInspected}</strong> functions inspected</span>
             </div>
-            <div className="evidence-item">
-              <i className="bx bx-check" style={{color: 'var(--color-success)'}} />
-              <span><strong>{evidence.candidatesRanked}</strong> candidate files ranked</span>
+            <div className="hud-evidence-item">
+              <i className="bx bx-check-circle" />
+              <span><strong className="hud-glow-text">{evidence.candidatesRanked}</strong> candidate files ranked</span>
             </div>
-            <div className="evidence-item">
-              <i className="bx bx-check" style={{color: 'var(--color-success)'}} />
+            <div className="hud-evidence-item">
+              <i className="bx bx-check-circle" />
               <span>Source code extracted structurally</span>
             </div>
           </div>
@@ -61,85 +57,80 @@ export default function MissionBrief({ task, data }) {
 
       {/* Prerequisites */}
       {mission.prerequisites && mission.prerequisites.length > 0 && (
-        <div className="mission-section">
-          <div className="mission-section__header">
-            <div className="mission-section__icon mission-section__icon--prereq">
-              <i className="bx bx-list-check" />
-            </div>
-            <h3 className="mission-section__title">Prerequisites</h3>
-            <span className="mission-section__count">Learn these first</span>
+        <div className="hud-mission-section">
+          <div className="hud-section-header hud-section-header--yellow">
+            <i className="bx bx-list-check" />
+            <h3>Prerequisites</h3>
+            <span className="hud-section-count">Learn these first</span>
           </div>
-          {mission.prerequisites.map((prereq, i) => (
-            <div key={i} className="prereq-card">
-              <div className="prereq-card__content">
-                <div className="prereq-card__description">{prereq}</div>
+          <div className="hud-list-container">
+            {mission.prerequisites.map((prereq, i) => (
+              <div key={i} className="hud-list-item hud-list-item--yellow">
+                <i className="bx bx-right-arrow-alt" />
+                <div className="hud-list-item__text">{prereq}</div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       )}
 
       {/* Files You'll Touch */}
       {mission.filesToTouch && mission.filesToTouch.length > 0 && (
-        <div className="mission-section">
-          <div className="mission-section__header">
-            <div className="mission-section__icon">
-              <i className="bx bx-folder-open" />
-            </div>
-            <h3 className="mission-section__title">Files You'll Touch</h3>
-            <span className="mission-section__count">{mission.filesToTouch.length} files</span>
+        <div className="hud-mission-section">
+          <div className="hud-section-header hud-section-header--blue">
+            <i className="bx bx-folder-open" />
+            <h3>Files You'll Touch</h3>
+            <span className="hud-section-count">{mission.filesToTouch.length} files</span>
           </div>
-          {mission.filesToTouch.map((file, i) => (
-            <div key={i} className="file-card">
-              <div className="file-card__indicator file-card__indicator--primary" />
-              <div className="file-card__content">
-                <div className="file-card__header">
-                  <span className="file-card__path">
-                    <i className="bx bx-file" /> {file.path}
-                  </span>
+          <div className="hud-cards-grid">
+            {mission.filesToTouch.map((file, i) => (
+              <div key={i} className="hud-file-card">
+                <div className="hud-file-card__path">
+                  <i className="bx bx-file" /> {file.path}
                 </div>
-                <div className="file-card__reason">{file.reason}</div>
+                <div className="hud-file-card__reason">{file.reason}</div>
+                <div className="hud-file-card__scanline" />
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       )}
 
       {/* Known Traps */}
       {mission.knownTraps && mission.knownTraps.length > 0 && (
-        <div className="mission-section">
-          <div className="mission-section__header">
-            <div className="mission-section__icon mission-section__icon--warning">
-              <i className="bx bx-shield-x" />
-            </div>
-            <h3 className="mission-section__title">Known Traps</h3>
-            <span className="mission-section__count">{mission.knownTraps.length} warnings</span>
+        <div className="hud-mission-section">
+          <div className="hud-section-header hud-section-header--red">
+            <i className="bx bx-shield-x" />
+            <h3>Known Traps</h3>
+            <span className="hud-section-count">{mission.knownTraps.length} warnings</span>
           </div>
-          {mission.knownTraps.map((trap, i) => (
-            <div key={i} className="trap-card trap-card--warning">
-              <div className="trap-card__description">
-                <i className="bx bx-error" /> {trap}
+          <div className="hud-list-container">
+            {mission.knownTraps.map((trap, i) => (
+              <div key={i} className="hud-list-item hud-list-item--red">
+                <i className="bx bx-error" />
+                <div className="hud-list-item__text">{trap}</div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       )}
 
       {/* Route */}
       {mission.routeSteps && mission.routeSteps.length > 0 && (
-        <div className="mission-section">
-          <div className="mission-section__header">
-            <div className="mission-section__icon mission-section__icon--route">
-              <i className="bx bx-compass" />
-            </div>
-            <h3 className="mission-section__title">Route</h3>
-            <span className="mission-section__count">Recommended execution order</span>
+        <div className="hud-mission-section">
+          <div className="hud-section-header hud-section-header--purple">
+            <i className="bx bx-compass" />
+            <h3>Execution Route</h3>
+            <span className="hud-section-count">Recommended execution order</span>
           </div>
-          <div className="route-list">
+          <div className="hud-route-container">
             {mission.routeSteps.map((step, i) => (
-              <div key={i} className="route-step">
-                <div className="route-step__number">Step {i + 1}</div>
-                <div className="route-step__action">{step}</div>
+              <div key={i} className="hud-route-step">
+                <div className="hud-route-step__number">{i + 1}</div>
+                <div className="hud-route-step__content">
+                  <div className="hud-route-step__label">STEP 0{i + 1}</div>
+                  <div className="hud-route-step__action">{step}</div>
+                </div>
               </div>
             ))}
           </div>
@@ -153,50 +144,45 @@ function DetectiveMode({ deepFiles, relatedFiles }) {
   const [expanded, setExpanded] = useState(false)
   
   return (
-    <div className="mission-section">
+    <div className="hud-mission-section">
       <div 
-        className="detective-mode-trigger" 
+        className={`hud-detective-trigger ${expanded ? 'hud-detective-trigger--active' : ''}`} 
         onClick={() => setExpanded(!expanded)}
-        style={{
-          display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer',
-          padding: '12px 16px', background: 'var(--color-surface)', border: '1px solid var(--color-border)',
-          borderRadius: 'var(--radius-md)', fontWeight: 600, color: 'var(--color-text-primary)',
-          transition: 'all 0.2s'
-        }}
       >
         <i className={`bx ${expanded ? 'bx-chevron-up' : 'bx-chevron-down'}`} />
         EVIDENCE LOG (SEMANTIC RETRIEVAL)
       </div>
       
       {expanded && (
-        <div className="detective-mode-content" style={{
-          marginTop: '12px', padding: '16px', background: 'var(--color-bg)', border: '1px dashed var(--color-border)',
-          borderRadius: 'var(--radius-md)', fontFamily: 'var(--font-mono)', fontSize: '13px', color: 'var(--color-text-secondary)'
-        }}>
-          <div style={{ fontWeight: 'bold', marginBottom: '8px', color: 'var(--color-text-primary)' }}>DEEP READ (Target Files)</div>
-          {deepFiles.map((file, i) => (
-            <div key={file} style={{ display: 'flex', flexDirection: 'column' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <i className="bx bx-file" style={{ color: 'var(--color-accent)' }} /> 
-                <span style={{ color: 'var(--color-text-primary)' }}>{file}</span>
-              </div>
-              {i < deepFiles.length - 1 && (
-                <div style={{ padding: '8px 0 8px 6px', color: 'var(--color-border-hover)' }}>
-                  <i className="bx bx-link" /> semantic dependency
+        <div className="hud-detective-content">
+          <div className="hud-detective-header">DEEP READ (Target Files)</div>
+          <div className="hud-detective-list">
+            {deepFiles.map((file, i) => (
+              <div key={file} className="hud-detective-item">
+                <div className="hud-detective-file">
+                  <i className="bx bx-file" /> 
+                  <span>{file}</span>
                 </div>
-              )}
-            </div>
-          ))}
+                {i < deepFiles.length - 1 && (
+                  <div className="hud-detective-link">
+                    <i className="bx bx-link" /> semantic dependency
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
           
           {relatedFiles && relatedFiles.length > 0 && (
             <>
-              <div style={{ fontWeight: 'bold', margin: '24px 0 8px 0', color: 'var(--color-text-primary)' }}>ALSO CONSIDER (Context Files)</div>
-              {relatedFiles.map((file) => (
-                <div key={file} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                  <i className="bx bx-folder-open" style={{ color: 'var(--color-text-secondary)' }} /> 
-                  <span>{file}</span>
-                </div>
-              ))}
+              <div className="hud-detective-header" style={{ marginTop: '24px' }}>ALSO CONSIDER (Context Files)</div>
+              <div className="hud-detective-list">
+                {relatedFiles.map((file) => (
+                  <div key={file} className="hud-detective-file hud-detective-file--context">
+                    <i className="bx bx-folder-open" /> 
+                    <span>{file}</span>
+                  </div>
+                ))}
+              </div>
             </>
           )}
         </div>
