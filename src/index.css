@@ -3318,3 +3318,304 @@ code, pre {
   .hs-list-panel--narrowed { max-width: 100%; flex: 1; }
   .hs-deep-dive { width: 100%; margin-left: 0; margin-top: 16px; }
 }
+
+/* ═══════════════════════════════════════════════════════
+   GAMIFIED ROLE SELECTION (AI ONBOARDING)
+   Ambient orbs · Glassmorphic cards · Hover path preview
+   ═══════════════════════════════════════════════════════ */
+
+.ob-view {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100%;
+  padding: 40px 20px;
+  overflow: hidden;
+  font-family: 'Inter', sans-serif;
+}
+.ob-view--path {
+  justify-content: flex-start;
+}
+
+/* Ambient glowing orbs */
+.ob-ambient {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(120px);
+  opacity: 0.35;
+  pointer-events: none;
+  z-index: 0;
+}
+.ob-ambient--1 {
+  width: 400px;
+  height: 400px;
+  background: #a855f7;
+  top: -100px;
+  left: 10%;
+  animation: floatOrb 18s ease-in-out infinite alternate;
+}
+.ob-ambient--2 {
+  width: 500px;
+  height: 500px;
+  background: #3b82f6;
+  bottom: -150px;
+  right: 5%;
+  animation: floatOrb 24s ease-in-out infinite alternate-reverse;
+}
+.ob-ambient--3 {
+  width: 300px;
+  height: 300px;
+  background: #06b6d4;
+  top: 40%;
+  left: 40%;
+  animation: floatOrb 20s ease-in-out infinite alternate;
+}
+@keyframes floatOrb {
+  0%   { transform: translate(0, 0) scale(1); }
+  100% { transform: translate(40px, -60px) scale(1.1); }
+}
+
+/* Header */
+.ob-header, .ob-path-header {
+  text-align: center;
+  margin-bottom: 50px;
+  z-index: 1;
+}
+.ob-title {
+  font-size: clamp(2rem, 4vw, 2.5rem);
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: -0.02em;
+  margin: 0 0 10px;
+}
+.ob-subtitle {
+  font-size: 0.95rem;
+  color: rgba(255,255,255,0.6);
+  max-width: 500px;
+  margin: 0 auto;
+  line-height: 1.5;
+}
+
+/* Roles grid */
+.ob-roles {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+  justify-content: center;
+  z-index: 1;
+  perspective: 1000px;
+}
+
+/* ── Role Card ───────────────────────────────────────── */
+.ob-card {
+  width: 260px;
+  height: 320px;
+  border-radius: 20px;
+  background: rgba(255,255,255,0.85); /* Very light, almost white for that clean 3D look */
+  padding: 2px;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+}
+.ob-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 20px;
+  padding: 2px;
+  background: linear-gradient(135deg, rgba(255,255,255,0.4), transparent);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+          mask-composite: exclude;
+}
+.ob-card__inner {
+  background: #f1f5f9; /* Slate 100 for the inside */
+  border-radius: 18px;
+  width: 100%;
+  height: 100%;
+  padding: 32px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  overflow: hidden;
+  position: relative;
+}
+.ob-card__icon {
+  font-size: 5rem;
+  line-height: 1;
+  margin-bottom: 24px;
+  filter: drop-shadow(0 10px 10px rgba(0,0,0,0.15));
+  transition: transform 0.4s ease;
+}
+.ob-card__name {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: #1e293b;
+  margin: 0 0 8px;
+}
+.ob-card__meta {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+.ob-card__meta svg {
+  stroke: #94a3b8;
+}
+
+/* Hover State (The magic) */
+.ob-card--hovered {
+  transform: translateY(-16px) scale(1.05);
+  height: 420px; /* Expand to show path */
+  box-shadow:
+    0 20px 40px rgba(0,0,0,0.3),
+    0 0 0 2px rgba(168,85,247,0.5),
+    0 0 40px rgba(168,85,247,0.3);
+}
+.ob-card--hovered .ob-card__inner {
+  background: #ffffff; /* Brighter when active */
+}
+.ob-card--hovered .ob-card__icon {
+  transform: scale(1.1) translateY(-10px);
+}
+.ob-card--hovered .ob-card__name {
+  color: #0f172a;
+}
+
+/* ── Path Preview ────────────────────────────────────── */
+.ob-path {
+  margin-top: 24px;
+  width: 100%;
+  text-align: left;
+  border-top: 1px solid rgba(0,0,0,0.06);
+  padding-top: 20px;
+  animation: fadeInPath 0.4s ease forwards;
+  opacity: 0;
+}
+@keyframes fadeInPath {
+  to { opacity: 1; }
+}
+.ob-path__title {
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: #1e293b;
+  letter-spacing: 0.05em;
+  margin-bottom: 12px;
+}
+.ob-path__content {
+  display: flex;
+  gap: 12px;
+}
+.ob-path__label {
+  font-size: 0.7rem;
+  color: #64748b;
+  font-weight: 600;
+}
+.ob-path__steps {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  position: relative;
+}
+.ob-path__steps::before {
+  content: '';
+  position: absolute;
+  left: 4px;
+  top: 6px;
+  bottom: 6px;
+  width: 2px;
+  background: #e2e8f0;
+  z-index: 0;
+}
+.ob-path__step {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  position: relative;
+  z-index: 1;
+}
+.ob-path__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #a855f7;
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 1px #e2e8f0;
+}
+.ob-path__text {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #334155;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 120px;
+}
+
+/* ── Active Path View (Fallback simple styles) ───────── */
+.ob-back {
+  background: transparent;
+  border: none;
+  color: rgba(255,255,255,0.6);
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  align-self: flex-start;
+  margin-bottom: 20px;
+  z-index: 1;
+}
+.ob-back:hover { color: #fff; }
+
+.ob-lessons {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  max-width: 600px;
+  z-index: 1;
+}
+.ob-lesson {
+  display: flex;
+  gap: 16px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 12px;
+  padding: 16px;
+}
+.ob-lesson__num {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.ob-lesson__content { flex: 1; }
+.ob-lesson__title { font-weight: 600; margin-bottom: 4px; }
+.ob-lesson__desc { font-size: 0.8rem; color: rgba(255,255,255,0.6); margin-bottom: 8px; }
+.ob-lesson__files { display: flex; gap: 6px; flex-wrap: wrap; }
+.ob-lesson__file {
+  font-size: 0.7rem;
+  padding: 2px 8px;
+  background: rgba(255,255,255,0.05);
+  border-radius: 4px;
+  font-family: 'JetBrains Mono', monospace;
+}
+.ob-lesson__time {
+  font-size: 0.75rem;
+  color: rgba(255,255,255,0.4);
+}
