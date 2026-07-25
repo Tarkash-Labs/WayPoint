@@ -332,7 +332,7 @@ export default function Dashboard() {
       case 'hotspots':
         return <HotspotsView data={enrichedData} />
       case 'map':
-        return <MapView data={enrichedData} />
+        return <MapView data={enrichedData} selectedTask={selectedTask} />
       default:
         return <TaskInput onSubmit={handleTaskSubmit} />
     }
