@@ -7,14 +7,92 @@ const ROLE_ICONS = {
   Architecture: 'bx-building-house',
 }
 
+/**
+ * Build a heuristic onboarding structure from raw file data.
+ * Used when AI enrichment fails or when the data shape doesn't match.
+ */
+function buildFallbackOnboarding(data) {
+  const files = data?.files || []
+  
+  // Classify files by type
+  const frontendFiles = files.filter(f => 
+    /\.(jsx|tsx|css|html|vue|svelte)$/.test(f.path) || 
+    /component|page|view|layout|style/i.test(f.path)
+  )
+  const backendFiles = files.filter(f => 
+    /route|controller|api|server|middleware|model|schema|database|migration/i.test(f.path) ||
+    /\.(go|py|java|rb|rs|php)$/.test(f.path)
+  )
+  const configFiles = files.filter(f => 
+    /config|setup|env|\.json$|\.yaml$|\.yml$|\.toml$/i.test(f.path)
+  )
+  const riskyFiles = files.filter(f => (f.riskScore || 0) >= 5)
+
+  const makeLessons = (fileList, category) => {
+    if (fileList.length === 0) return []
+    
+    const topFiles = [...fileList]
+      .sort((a, b) => (b.linesOfCode || 0) - (a.linesOfCode || 0))
+      .slice(0, 5)
+
+    return topFiles.map((f, i) => ({
+      title: `Understand ${f.path.split('/').pop()}`,
+      description: `Read through ${f.path} (${f.linesOfCode || '?'} LOC). ${f.semanticPurpose || `This is a key ${category} file in the codebase.`}`,
+      estimatedTime: `${Math.max(5, Math.round((f.linesOfCode || 50) / 20))} min`,
+      keyFiles: [f.path],
+      insight: f.riskAnalysis || `${category} file ranked #${i + 1} by size in its category.`
+    }))
+  }
+
+  return {
+    roles: {
+      Frontend: {
+        estimatedTime: `${Math.max(1, Math.round(frontendFiles.length * 5 / 60))} hours`,
+        lessons: makeLessons(frontendFiles, 'frontend')
+      },
+      Backend: {
+        estimatedTime: `${Math.max(1, Math.round(backendFiles.length * 5 / 60))} hours`,
+        lessons: makeLessons(backendFiles, 'backend')
+      },
+      'Bug Fixes': {
+        estimatedTime: `${Math.max(1, Math.round(riskyFiles.length * 5 / 60))} hours`,
+        lessons: makeLessons(riskyFiles, 'high-risk')
+      },
+      Architecture: {
+        estimatedTime: `${Math.max(1, Math.round(configFiles.length * 3 / 60))} hours`,
+        lessons: makeLessons(configFiles, 'architecture')
+      }
+    }
+  }
+}
+
 export default function OnboardingView({ data }) {
   const [selectedRole, setSelectedRole] = useState(null)
   const [completedLessons, setCompletedLessons] = useState(new Set())
   const [activeLesson, setActiveLesson] = useState(0)
 
-  if (!data?.onboarding) return null
+  if (!data) return null
 
-  const roles = data.onboarding.roles
+  // Use AI-generated onboarding if it has the correct shape, otherwise build from file data
+  const onboarding = (data.onboarding?.roles) 
+    ? data.onboarding 
+    : buildFallbackOnboarding(data)
+
+  const roles = onboarding.roles
+
+  // Filter out roles with no lessons
+  const availableRoles = Object.entries(roles).filter(([, role]) => role.lessons && role.lessons.length > 0)
+
+  if (availableRoles.length === 0) {
+    return (
+      <div className="onboarding">
+        <h2 className="onboarding__heading">I'm new here.</h2>
+        <p className="onboarding__subheading">
+          No onboarding data available yet. Try analyzing a repository with more files, or submit a task to generate a Mission Brief.
+        </p>
+      </div>
+    )
+  }
 
   if (!selectedRole) {
     return (
@@ -24,7 +102,7 @@ export default function OnboardingView({ data }) {
           What's your role? Waypoint will create a personalized learning path through this codebase.
         </p>
         <div className="onboarding__roles">
-          {Object.entries(roles).map(([name, role]) => (
+          {availableRoles.map(([name, role]) => (
             <div key={name} className="role-card" onClick={() => setSelectedRole(name)}>
               <div className="role-card__icon">
                 <i className={`bx ${ROLE_ICONS[name] || 'bx-package'}`} />
@@ -44,6 +122,13 @@ export default function OnboardingView({ data }) {
   }
 
   const roleData = roles[selectedRole]
+  
+  // Safety check — if the role was removed or has no lessons
+  if (!roleData || !roleData.lessons || roleData.lessons.length === 0) {
+    setSelectedRole(null)
+    return null
+  }
+
   const lessons = roleData.lessons
   const progress = (completedLessons.size / lessons.length) * 100
 

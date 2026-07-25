@@ -1,6 +1,7 @@
 /**
  * Gemini AI service
  * Uses gemini-3.5-flash — best stable model for coding and agentic tasks
+ * Repo analysis is routed through the AI Router for multi-model fallback.
  */
 
 // Proxied through Vite dev server — see vite.config.js
@@ -74,9 +75,10 @@ export async function generateMissionBrief(repoData, task) {
  * Called once when the repo loads — before the user types a task
  */
 export async function generateRepoAnalysis(repoData) {
+  const { executeRoutedPrompt } = await import('./aiRouter')
   const prompt = buildRepoAnalysisPrompt(repoData)
-  const response = await callGemini(prompt)
-  return response
+  const result = await executeRoutedPrompt(prompt)
+  return result.response
 }
 
 // ─── Prompts ──────────────────────────────────────────────────────────────────
@@ -176,7 +178,7 @@ Respond with ONLY a valid JSON object matching this schema exactly:
 }`
 }
 
-function buildRepoAnalysisPrompt(repoData) {
+export function buildRepoAnalysisPrompt(repoData) {
   const allFiles = repoData.files
     .sort((a, b) => b.riskScore - a.riskScore)
     .slice(0, 30)

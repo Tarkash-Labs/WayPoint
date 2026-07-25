@@ -101,12 +101,19 @@ export default function Dashboard() {
           
           const totalLOC = localRepo.files.reduce((s, f) => s + (f.linesOfCode || 0), 0)
           
+          // Compute base risk scores for local files (mirrors github.js calculateBaseRisk)
+          const scoredFiles = localRepo.files.map(f => ({
+            ...f,
+            riskScore: f.riskScore || calculateLocalRisk(f.path, f.size || 0),
+            type: classifyLocalFile(f.path)
+          }))
+          
           // Build enriched data for local workspace
           setEnrichedData({
-            repo: { name: localRepo.repoName, description: 'Local Workspace', stars: 0, issues: 0, totalFiles: localRepo.files.length, totalLOC },
-            files: localRepo.files.map(f => ({ ...f, riskScore: f.riskScore || 1 })),
+            repo: { name: localRepo.repoName, description: 'Local Workspace', language: 'Multiple', stars: 0, issues: 0, totalFiles: localRepo.files.length, totalLOC },
+            files: scoredFiles,
             directories: localRepo.directories,
-            onboarding: { role: 'Local Developer', goal: 'Build amazing things', context: 'Local environment active.' },
+            onboarding: null, // Will trigger heuristic fallback in OnboardingView
             tasks: {}
           })
           setIsRepoLoading(false)
@@ -381,4 +388,37 @@ function mergeHotspots(files, hotspots) {
       refactoringSuggestion: hs.refactoringSuggestion,
     }
   })
+}
+
+/**
+ * Calculate base risk score for local files (mirrors github.js logic)
+ */
+function calculateLocalRisk(path, sizeBytes) {
+  let score = 1
+  if (sizeBytes > 100000) score += 3
+  else if (sizeBytes > 50000) score += 2
+  else if (sizeBytes > 20000) score += 1
+  if (/auth|login|payment|billing|token|session|oauth/i.test(path)) score += 3
+  if (/middleware/i.test(path)) score += 2
+  if (/database|migration|schema/i.test(path)) score += 2
+  if (/config|env|secret/i.test(path)) score += 2
+  return Math.min(score, 10)
+}
+
+/**
+ * Classify local files by type (mirrors github.js logic)
+ */
+function classifyLocalFile(path) {
+  if (/\.(test|spec)\.(js|ts|jsx|tsx)$/.test(path)) return 'test'
+  if (/\.(config|rc)\.(js|ts|json|yaml|yml)$/.test(path) || /^\./.test(path.split('/').pop())) return 'config'
+  if (/middleware/i.test(path)) return 'middleware'
+  if (/route|router|controller/i.test(path)) return 'route'
+  if (/model|schema|entity/i.test(path)) return 'model'
+  if (/auth|login|session|token|oauth/i.test(path)) return 'auth'
+  if (/service|provider/i.test(path)) return 'service'
+  if (/hook|use[A-Z]/i.test(path)) return 'hook'
+  if (/component|page|view/i.test(path)) return 'component'
+  if (/util|helper|lib/i.test(path)) return 'utility'
+  if (/\.(md|txt|rst)$/i.test(path)) return 'docs'
+  return 'source'
 }
