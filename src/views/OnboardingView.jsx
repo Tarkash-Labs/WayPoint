@@ -1,10 +1,10 @@
 import { useState } from 'react'
 
 const ROLE_ICONS = {
-  Frontend: '🎨',
-  Backend: '⚙️',
-  'Bug Fixes': '🐛',
-  Architecture: '🏗️',
+  Frontend: 'bx-palette',
+  Backend: 'bx-server',
+  'Bug Fixes': 'bx-bug',
+  Architecture: 'bx-building-house',
 }
 
 export default function OnboardingView({ data }) {
@@ -21,15 +21,21 @@ export default function OnboardingView({ data }) {
       <div className="onboarding">
         <h2 className="onboarding__heading">I'm new here.</h2>
         <p className="onboarding__subheading">
-          What's your role? Atlas will create a personalized learning path through this codebase.
+          What's your role? Waypoint will create a personalized learning path through this codebase.
         </p>
         <div className="onboarding__roles">
           {Object.entries(roles).map(([name, role]) => (
             <div key={name} className="role-card" onClick={() => setSelectedRole(name)}>
-              <div className="role-card__icon">{ROLE_ICONS[name] || '📦'}</div>
+              <div className="role-card__icon">
+                <i className={`bx ${ROLE_ICONS[name] || 'bx-package'}`} />
+              </div>
               <div className="role-card__name">{name}</div>
-              <div className="role-card__lessons">{role.lessons.length} lessons</div>
-              <div className="role-card__time">⏱️ {role.estimatedTime}</div>
+              <div className="role-card__lessons">
+                <i className="bx bx-book-open" /> {role.lessons.length} lessons
+              </div>
+              <div className="role-card__time">
+                <i className="bx bx-time-five" /> {role.estimatedTime}
+              </div>
             </div>
           ))}
         </div>
@@ -53,11 +59,11 @@ export default function OnboardingView({ data }) {
   return (
     <div className="lesson-view">
       <button className="lesson-view__back" onClick={() => { setSelectedRole(null); setCompletedLessons(new Set()); setActiveLesson(0) }}>
-        ← Back to roles
+        <i className="bx bx-arrow-back" /> Back to roles
       </button>
 
       <h2 className="onboarding__heading" style={{ marginTop: '16px' }}>
-        {ROLE_ICONS[selectedRole]} {selectedRole} Onboarding
+        <i className={`bx ${ROLE_ICONS[selectedRole] || 'bx-package'}`} /> {selectedRole} Onboarding
       </h2>
       <p className="onboarding__subheading">
         Estimated time: {roleData.estimatedTime} · {lessons.length} lessons
@@ -85,21 +91,23 @@ export default function OnboardingView({ data }) {
               onClick={() => !isCompleted && setActiveLesson(idx)}
             >
               <div className={`lesson-item__status lesson-item__status--${isCompleted ? 'completed' : isActive ? 'active' : 'pending'}`}>
-                {isCompleted ? '✓' : idx + 1}
+                {isCompleted ? <i className="bx bx-check" /> : idx + 1}
               </div>
               <div className="lesson-item__content">
                 <div className="lesson-item__title">{lesson.title}</div>
                 <div className="lesson-item__description">{lesson.description}</div>
                 {lesson.insight && (
                   <div className="lesson-item__insight">
-                    <span>💡</span>
+                    <i className="bx bx-bulb" />
                     <span>{lesson.insight}</span>
                   </div>
                 )}
                 {lesson.keyFiles && (
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: '8px' }}>
                     {lesson.keyFiles.map((f) => (
-                      <span key={f} className="prereq-card__file-tag">{f.split('/').pop()}</span>
+                      <span key={f} className="prereq-card__file-tag">
+                        <i className="bx bx-file" /> {f.split('/').pop()}
+                      </span>
                     ))}
                   </div>
                 )}
@@ -117,13 +125,18 @@ export default function OnboardingView({ data }) {
                       fontWeight: '600',
                       cursor: 'pointer',
                       fontFamily: 'var(--font-sans)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
                     }}
                   >
-                    Complete & Continue →
+                    Complete & Continue <i className="bx bx-right-arrow-alt" />
                   </button>
                 )}
               </div>
-              <div className="lesson-item__time">{lesson.estimatedTime}</div>
+              <div className="lesson-item__time">
+                <i className="bx bx-time-five" /> {lesson.estimatedTime}
+              </div>
             </div>
           )
         })}

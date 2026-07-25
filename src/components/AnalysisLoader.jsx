@@ -1,20 +1,19 @@
 import { useState, useEffect } from 'react'
 
 const STAGES = [
-  { id: 'fetch',    icon: '📡', label: 'Fetching repository...' },
-  { id: 'tree',     icon: '🌲', label: 'Mapping file structure' },
-  { id: 'analyze',  icon: '🔍', label: 'Running static analysis' },
-  { id: 'dirs',     icon: '🗂️',  label: 'Understanding architecture' },
-  { id: 'ai',       icon: '🧠', label: 'AI enrichment with Gemini' },
-  { id: 'hotspots', icon: '🔥', label: 'Detecting risk hotspots' },
-  { id: 'done',     icon: '✅', label: 'Building context engine' },
+  { id: 'fetch',    icon: 'bx-cloud-download', label: 'Fetching repository...' },
+  { id: 'tree',     icon: 'bx-git-branch',     label: 'Mapping file structure' },
+  { id: 'analyze',  icon: 'bx-search-alt',     label: 'Running static analysis' },
+  { id: 'dirs',     icon: 'bx-folder-open',    label: 'Understanding architecture' },
+  { id: 'ai',       icon: 'bx-brain',          label: 'AI enrichment with Gemini' },
+  { id: 'hotspots', icon: 'bxs-flame',         label: 'Detecting risk hotspots' },
+  { id: 'done',     icon: 'bx-check-circle',   label: 'Building context engine' },
 ]
 
 export default function AnalysisLoader({ currentStage, repoName, error }) {
   const [visibleStages, setVisibleStages] = useState([])
   const currentIdx = STAGES.findIndex((s) => s.id === currentStage)
 
-  // Progressively reveal stages as they complete
   useEffect(() => {
     const timer = setTimeout(() => {
       setVisibleStages(STAGES.slice(0, currentIdx + 1))
@@ -28,7 +27,7 @@ export default function AnalysisLoader({ currentStage, repoName, error }) {
         <div className="analysis-loader__repo">
           {repoName ? (
             <>
-              <span className="analysis-loader__repo-icon">📦</span>
+              <i className="bx bx-git-repo-forked analysis-loader__repo-icon" />
               <span className="analysis-loader__repo-name">{repoName}</span>
             </>
           ) : (
@@ -42,7 +41,7 @@ export default function AnalysisLoader({ currentStage, repoName, error }) {
 
       {error ? (
         <div className="analysis-loader__error">
-          <div className="analysis-loader__error-icon">⚠️</div>
+          <i className="bx bx-error-circle analysis-loader__error-icon" />
           <div className="analysis-loader__error-text">{error}</div>
         </div>
       ) : (
@@ -50,7 +49,6 @@ export default function AnalysisLoader({ currentStage, repoName, error }) {
           {STAGES.map((stage, idx) => {
             const isComplete = idx < currentIdx
             const isActive = idx === currentIdx
-            const isPending = idx > currentIdx
             const isVisible = visibleStages.some((s) => s.id === stage.id) || isActive
 
             return (
@@ -66,14 +64,14 @@ export default function AnalysisLoader({ currentStage, repoName, error }) {
               >
                 <div className="analysis-stage__indicator">
                   {isComplete ? (
-                    <span className="analysis-stage__check">✓</span>
+                    <span className="analysis-stage__check"><i className="bx bx-check" /></span>
                   ) : isActive ? (
                     <span className="analysis-stage__spinner" />
                   ) : (
                     <span className="analysis-stage__dot" />
                   )}
                 </div>
-                <span className="analysis-stage__icon">{stage.icon}</span>
+                <i className={`bx ${stage.icon} analysis-stage__icon`} />
                 <span className="analysis-stage__label">{stage.label}</span>
               </div>
             )

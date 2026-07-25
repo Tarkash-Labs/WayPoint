@@ -50,10 +50,10 @@ export default function LandingPage() {
               spellCheck={false}
             />
             <button type="submit" className="landing__btn">
-              Analyze →
+              Analyze <i className="bx bx-right-arrow-alt" />
             </button>
           </div>
-          {error && <div className="landing__error">{error}</div>}
+          {error && <div className="landing__error"><i className="bx bx-error-circle" /> {error}</div>}
         </form>
 
         <div className="landing__examples">
@@ -64,24 +64,24 @@ export default function LandingPage() {
               className="landing__example-chip"
               onClick={() => handleExampleClick(ex.url)}
             >
-              {ex.label}
+              <i className="bx bx-git-repo-forked" /> {ex.label}
             </button>
           ))}
         </div>
 
         <div className="landing__features">
           <div className="landing__feature">
-            <div className="landing__feature-icon">🎯</div>
+            <div className="landing__feature-icon"><i className="bx bx-target-lock" /></div>
             <div className="landing__feature-title">Mission Brief</div>
             <div className="landing__feature-desc">Know exactly which files matter</div>
           </div>
           <div className="landing__feature">
-            <div className="landing__feature-icon">⚠️</div>
+            <div className="landing__feature-icon"><i className="bx bx-shield-x" /></div>
             <div className="landing__feature-title">Known Traps</div>
             <div className="landing__feature-desc">Avoid production-breaking mistakes</div>
           </div>
           <div className="landing__feature">
-            <div className="landing__feature-icon">🧭</div>
+            <div className="landing__feature-icon"><i className="bx bx-compass" /></div>
             <div className="landing__feature-title">Route</div>
             <div className="landing__feature-desc">GPS for your codebase</div>
           </div>
