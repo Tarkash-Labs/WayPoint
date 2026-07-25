@@ -2982,6 +2982,145 @@ code, pre {
   color: rgba(255,255,255,0.4);
 }
 
+/* ═══════════════════════════════════════════════════════
+   3D CODEBASE ARCHITECTURE HUD
+   Neon grid · Glowing buildings · Overlay panels
+   ═══════════════════════════════════════════════════════ */
+
+/* Main view — fills the entire hud-main__content area */
+.arch-view {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  /* Extend to fill the parent padding area */
+  margin: -20px -48px;
+  padding: 0;
+  overflow: hidden;
+  font-family: 'Inter', sans-serif;
+}
+
+/* Slim title bar above the canvas */
+.arch-view__titlebar {
+  display: flex;
+  align-items: center;
+  padding: 10px 20px;
+  background: rgba(5, 5, 15, 0.9);
+  border-bottom: 1px solid rgba(99, 102, 241, 0.2);
+  flex-shrink: 0;
+}
+.arch-view__title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: rgba(255,255,255,0.8);
+  letter-spacing: 0.02em;
+}
+
+/* Canvas wrapper — relative so HUD panels overlay it */
+.arch-view__canvas-wrap {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  background: #05050f;
+}
+.arch-view__canvas-wrap canvas {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* ── HUD Panel (shared glassmorphic style) ───────────── */
+.arch-hud-panel {
+  position: absolute;
+  background: rgba(10, 10, 30, 0.75);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  border-radius: 10px;
+  padding: 12px 16px;
+  backdrop-filter: blur(16px);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 160px;
+  box-shadow: 0 0 20px rgba(99,102,241,0.12), inset 0 1px 0 rgba(255,255,255,0.05);
+}
+.arch-hud-panel--tl { top: 16px; left: 16px; }
+.arch-hud-panel--tr { top: 16px; right: 16px; }
+
+.arch-hud-panel__label {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.35);
+  margin-bottom: 2px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.arch-hud-panel__row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.78rem;
+  color: rgba(255,255,255,0.6);
+}
+.arch-hud-panel__row svg {
+  flex-shrink: 0;
+  stroke: rgba(255,255,255,0.3);
+}
+.arch-hud-panel__val {
+  margin-left: auto;
+  color: rgba(255,255,255,0.9);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Legend color dot */
+.arch-hud-panel__dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+/* ── HUD Status Bar (bottom) ─────────────────────────── */
+.arch-hud-status {
+  position: absolute;
+  bottom: 16px;
+  left: 16px;
+  background: rgba(10, 10, 30, 0.78);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  border-radius: 10px;
+  padding: 14px 18px;
+  backdrop-filter: blur(16px);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-width: 340px;
+  box-shadow: 0 0 24px rgba(99,102,241,0.15), inset 0 1px 0 rgba(255,255,255,0.05);
+}
+.arch-hud-status__indicator {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.4);
+}
+.arch-hud-status__active {
+  color: #4ade80;
+  text-shadow: 0 0 8px rgba(74,222,128,0.6);
+}
+.arch-hud-status__name {
+  font-size: 1rem;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+  font-family: 'JetBrains Mono', monospace;
+}
+.arch-hud-status__meta {
+  font-size: 0.75rem;
+  color: rgba(255,255,255,0.5);
+}
 /* ── Left list panel ─────────────────────────────────── */
 .hs-list-panel {
   flex: 1;
