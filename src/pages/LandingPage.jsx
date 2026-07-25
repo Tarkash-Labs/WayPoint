@@ -1,20 +1,33 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
+const EXAMPLES = [
+  { label: 'expressjs/express', url: 'https://github.com/expressjs/express' },
+  { label: 'pmndrs/zustand', url: 'https://github.com/pmndrs/zustand' },
+  { label: 'vitejs/vite', url: 'https://github.com/vitejs/vite' },
+]
+
 export default function LandingPage() {
   const [repoUrl, setRepoUrl] = useState('')
+  const [error, setError] = useState('')
   const navigate = useNavigate()
 
   const handleAnalyze = (e) => {
     e.preventDefault()
-    // For the hackathon demo, any URL (or empty) goes to the dashboard
-    navigate('/dashboard')
+    const url = repoUrl.trim()
+
+    if (!url) {
+      setError('Paste a GitHub repository URL to get started.')
+      return
+    }
+
+    setError('')
+    navigate('/dashboard', { state: { repoUrl: url } })
   }
 
-  const handleExampleClick = (example) => {
-    setRepoUrl(`https://github.com/${example}`)
-    // Auto-navigate after a brief moment
-    setTimeout(() => navigate('/dashboard'), 300)
+  const handleExampleClick = (url) => {
+    setRepoUrl(url)
+    navigate('/dashboard', { state: { repoUrl: url } })
   }
 
   return (
@@ -29,38 +42,31 @@ export default function LandingPage() {
           <div className="landing__input-group">
             <input
               type="text"
-              className="landing__input"
-              placeholder="Paste a repository URL..."
+              className={`landing__input ${error ? 'landing__input--error' : ''}`}
+              placeholder="github.com/owner/repo"
               value={repoUrl}
-              onChange={(e) => setRepoUrl(e.target.value)}
+              onChange={(e) => { setRepoUrl(e.target.value); setError('') }}
               autoFocus
+              spellCheck={false}
             />
             <button type="submit" className="landing__btn">
-              Analyze
+              Analyze →
             </button>
           </div>
+          {error && <div className="landing__error">{error}</div>}
         </form>
 
         <div className="landing__examples">
-          <span>Try:</span>
-          <button
-            className="landing__example-chip"
-            onClick={() => handleExampleClick('acme/saas-platform')}
-          >
-            acme/saas-platform
-          </button>
-          <button
-            className="landing__example-chip"
-            onClick={() => handleExampleClick('pmndrs/zustand')}
-          >
-            zustand
-          </button>
-          <button
-            className="landing__example-chip"
-            onClick={() => handleExampleClick('expressjs/express')}
-          >
-            express
-          </button>
+          <span>Try a real repo:</span>
+          {EXAMPLES.map((ex) => (
+            <button
+              key={ex.url}
+              className="landing__example-chip"
+              onClick={() => handleExampleClick(ex.url)}
+            >
+              {ex.label}
+            </button>
+          ))}
         </div>
 
         <div className="landing__features">

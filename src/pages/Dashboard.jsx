@@ -1,11 +1,15 @@
 import { useState, useEffect } from 'react'
+import { useLocation } from 'react-router-dom'
 import Sidebar from '../components/Sidebar'
 import TaskInput from '../components/TaskInput'
+import AnalysisLoader from '../components/AnalysisLoader'
 import MissionBrief from '../views/MissionBrief'
 import OnboardingView from '../views/OnboardingView'
 import HotspotsView from '../views/HotspotsView'
 import MapView from '../views/MapView'
 import AIBar from '../components/AIBar'
+import { parseGitHubUrl, fetchRepoMeta, fetchFileTree, buildRepoData } from '../services/github'
+import { generateMissionBrief, generateRepoAnalysis } from '../services/gemini'
 
 const VIEW_TITLES = {
   task: 'What are you trying to do?',
@@ -16,78 +20,171 @@ const VIEW_TITLES = {
 }
 
 export default function Dashboard() {
-  const [data, setData] = useState(null)
+  const location = useLocation()
+  const repoUrl = location.state?.repoUrl || ''
+
+  // Core data
+  const [repoData, setRepoData] = useState(null)       // raw GitHub data
+  const [enrichedData, setEnrichedData] = useState(null) // AI-enriched full data
+
+  // UI state
   const [activeView, setActiveView] = useState('task')
   const [selectedTask, setSelectedTask] = useState(null)
-  const [isAnalyzing, setIsAnalyzing] = useState(true)
 
+  // Loading stages
+  const [analysisStage, setAnalysisStage] = useState('fetch')
+  const [isRepoLoading, setIsRepoLoading] = useState(true)
+  const [isTaskLoading, setIsTaskLoading] = useState(false)
+  const [error, setError] = useState(null)
+  const [repoName, setRepoName] = useState('')
+
+  // ── Phase 1: Load + analyse the repository ─────────────────────────────────
   useEffect(() => {
-    // Simulate loading the pre-computed data
-    const timer = setTimeout(() => {
-      fetch('/enriched_data.json')
-        .then((res) => res.json())
-        .then((json) => {
-          setData(json)
-          setIsAnalyzing(false)
-        })
-    }, 1500) // Simulate analysis time
-    return () => clearTimeout(timer)
+    loadRepository()
   }, [])
 
-  const handleTaskSubmit = (taskName) => {
-    if (!data) return
-    const taskData = data.tasks[taskName]
-    if (taskData) {
-      setSelectedTask({ name: taskName, ...taskData })
-      setIsAnalyzing(true)
-      // Simulate AI processing
-      setTimeout(() => {
-        setIsAnalyzing(false)
-        setActiveView('mission')
-      }, 1200)
+  async function loadRepository() {
+    setIsRepoLoading(true)
+    setError(null)
+
+    try {
+      // Stage 1: parse URL
+      setAnalysisStage('fetch')
+      let owner, repo
+
+      if (repoUrl) {
+        try {
+          ;({ owner, repo } = parseGitHubUrl(repoUrl))
+        } catch {
+          // Fall through to mock data
+        }
+      }
+
+      // If we have a real URL, fetch from GitHub
+      if (owner && repo) {
+        // Stage 2: repo metadata
+        setAnalysisStage('fetch')
+        const meta = await fetchRepoMeta(owner, repo)
+        setRepoName(meta.full_name)
+
+        // Stage 3: file tree
+        setAnalysisStage('tree')
+        const tree = await fetchFileTree(owner, repo, meta.default_branch)
+
+        // Stage 4: static analysis
+        setAnalysisStage('analyze')
+        const rawData = buildRepoData(meta, tree)
+        setRepoData(rawData)
+
+        // Stage 5: directory grouping done — prep AI
+        setAnalysisStage('dirs')
+        await sleep(400) // let the UI render the dir stage
+
+        // Stage 6: AI enrichment
+        setAnalysisStage('ai')
+        const aiAnalysis = await generateRepoAnalysis(rawData)
+
+        // Stage 7: hotspots
+        setAnalysisStage('hotspots')
+        await sleep(300)
+
+        setAnalysisStage('done')
+        await sleep(400)
+
+        // Merge AI enrichment into the data shape our views expect
+        setEnrichedData({
+          repo: rawData.repo,
+          files: mergeHotspots(rawData.files, aiAnalysis.hotspots || []),
+          directories: rawData.directories,
+          onboarding: aiAnalysis.onboarding || null,
+          tasks: {}, // populated per-task on demand
+        })
+      } else {
+        // No valid GitHub URL — fall back to mock data for demo
+        setAnalysisStage('ai')
+        await sleep(600)
+        setAnalysisStage('done')
+        await sleep(300)
+
+        const mock = await fetch('/enriched_data.json').then((r) => r.json())
+        setRepoName(mock.repo.name)
+        setEnrichedData(mock)
+      }
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setIsRepoLoading(false)
     }
   }
 
-  const handleViewChange = (view) => {
-    setActiveView(view)
+  // ── Phase 2: Generate Mission Brief for a task ─────────────────────────────
+  const handleTaskSubmit = async (taskName) => {
+    if (!enrichedData) return
+    setIsTaskLoading(true)
+    setSelectedTask(null)
+
+    try {
+      // Check if we have pre-computed data for this task (mock fallback)
+      const precomputed = enrichedData.tasks?.[taskName]
+
+      if (precomputed) {
+        await sleep(800) // feel like something is happening
+        setSelectedTask({ name: taskName, ...precomputed })
+      } else if (repoData) {
+        // Real AI generation
+        const brief = await generateMissionBrief(repoData, taskName)
+        setSelectedTask({ name: taskName, ...brief })
+      } else {
+        // Mock data, unknown task — use first available task
+        const firstTask = Object.values(enrichedData.tasks || {})[0]
+        if (firstTask) setSelectedTask({ name: taskName, ...firstTask })
+      }
+
+      setActiveView('mission')
+    } catch (err) {
+      setError(`Mission Brief failed: ${err.message}`)
+    } finally {
+      setIsTaskLoading(false)
+    }
   }
 
+  // ── AI bar message ──────────────────────────────────────────────────────────
   const getAIMessage = () => {
-    if (!data) return 'Analyzing repository structure...'
+    if (!enrichedData) return 'Analyzing repository structure...'
+    const d = enrichedData
     if (activeView === 'task') {
-      return `<strong>${data.repo.name}</strong> has ${data.repo.totalFiles} files and ${data.repo.totalLOC.toLocaleString()} lines of code. Tell me what you're working on and I'll prepare your mission brief.`
+      return `<strong>${d.repo.name}</strong> has ${d.repo.totalFiles} files and ${d.repo.totalLOC?.toLocaleString()} lines of code. Tell me what you're working on.`
     }
     if (activeView === 'mission' && selectedTask) {
-      return `I've identified <strong>${selectedTask.relevantFiles.length} files</strong> relevant to "${selectedTask.name}" and flagged <strong>${selectedTask.knownTraps.length} known traps</strong>. Start with the prerequisites before touching any code.`
+      return `I've identified <strong>${selectedTask.relevantFiles?.length} files</strong> relevant to "${selectedTask.name}" and flagged <strong>${selectedTask.knownTraps?.length} known traps</strong>.`
     }
     if (activeView === 'hotspots') {
-      return `This codebase has <strong>3 high-risk modules</strong>. The auth middleware (<strong>risk 9.2</strong>) is the most critical — it has caused 3 production incidents.`
+      const highRisk = d.files?.filter((f) => f.riskScore >= 7).length || 0
+      return `This codebase has <strong>${highRisk} high-risk files</strong>. Know them before you touch anything.`
     }
     if (activeView === 'onboarding') {
-      return `Choose your role and I'll create a <strong>personalized learning path</strong> through this codebase. Each lesson focuses on what matters most for your work.`
+      return `Choose your role and I'll create a <strong>personalized learning path</strong> through this codebase.`
     }
     if (activeView === 'map') {
-      return `This is the <strong>architecture map</strong> of ${data.repo.name}. Building height = lines of code. Color = risk level. Click any building for details.`
+      return `Architecture map of <strong>${d.repo.name}</strong>. Building height = lines of code. Color = risk level.`
     }
-    return 'Ready to help.'
+    return 'Ready.'
   }
 
-  if (isAnalyzing && !data) {
+  // ── Render ──────────────────────────────────────────────────────────────────
+
+  // Full-screen loader while repo is being analyzed
+  if (isRepoLoading || error) {
     return (
       <div className="dashboard">
-        <Sidebar
-          data={null}
-          activeView={activeView}
-          onViewChange={handleViewChange}
-          selectedTask={selectedTask}
-        />
+        <Sidebar data={null} activeView={activeView} onViewChange={() => {}} selectedTask={null} />
         <div className="main">
-          <div className="main__content">
-            <div className="analyzing">
-              <div className="analyzing__spinner" />
-              <div className="analyzing__text">Analyzing repository...</div>
-              <div className="analyzing__subtext">Scanning file structure, imports, and dependencies</div>
-            </div>
+          <div className="main__content main__content--centered">
+            <AnalysisLoader
+              currentStage={analysisStage}
+              repoName={repoName}
+              error={error}
+            />
           </div>
         </div>
       </div>
@@ -95,12 +192,15 @@ export default function Dashboard() {
   }
 
   const renderView = () => {
-    if (isAnalyzing) {
+    // Task-level loading spinner
+    if (isTaskLoading) {
       return (
         <div className="analyzing">
           <div className="analyzing__spinner" />
           <div className="analyzing__text">Preparing your mission brief...</div>
-          <div className="analyzing__subtext">Analyzing task scope, identifying relevant files, checking for known traps</div>
+          <div className="analyzing__subtext">
+            Gemini is analyzing task scope, identifying relevant files, checking for known traps
+          </div>
         </div>
       )
     }
@@ -109,13 +209,15 @@ export default function Dashboard() {
       case 'task':
         return <TaskInput onSubmit={handleTaskSubmit} />
       case 'mission':
-        return selectedTask ? <MissionBrief task={selectedTask} data={data} /> : <TaskInput onSubmit={handleTaskSubmit} />
+        return selectedTask
+          ? <MissionBrief task={selectedTask} data={enrichedData} />
+          : <TaskInput onSubmit={handleTaskSubmit} />
       case 'onboarding':
-        return <OnboardingView data={data} />
+        return <OnboardingView data={enrichedData} />
       case 'hotspots':
-        return <HotspotsView data={data} />
+        return <HotspotsView data={enrichedData} />
       case 'map':
-        return <MapView data={data} />
+        return <MapView data={enrichedData} />
       default:
         return <TaskInput onSubmit={handleTaskSubmit} />
     }
@@ -124,14 +226,14 @@ export default function Dashboard() {
   return (
     <div className="dashboard">
       <Sidebar
-        data={data}
+        data={enrichedData}
         activeView={activeView}
-        onViewChange={handleViewChange}
+        onViewChange={setActiveView}
         selectedTask={selectedTask}
       />
       <div className="main">
         <div className="main__header">
-          <h2 className="main__title">{VIEW_TITLES[activeView] || 'Atlas AI'}</h2>
+          <h2 className="main__title">{VIEW_TITLES[activeView] || 'Waypoint'}</h2>
         </div>
         <div className="main__content">
           {renderView()}
@@ -140,4 +242,31 @@ export default function Dashboard() {
       </div>
     </div>
   )
+}
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function sleep(ms) {
+  return new Promise((r) => setTimeout(r, ms))
+}
+
+/**
+ * Merge AI-generated hotspot data back into the files array
+ */
+function mergeHotspots(files, hotspots) {
+  const hotspotMap = {}
+  hotspots.forEach((h) => { hotspotMap[h.path] = h })
+
+  return files.map((file) => {
+    const hs = hotspotMap[file.path]
+    if (!hs) return file
+    return {
+      ...file,
+      riskScore: hs.riskScore ?? file.riskScore,
+      semanticPurpose: hs.semanticPurpose,
+      riskAnalysis: hs.riskAnalysis,
+      prodIncidents: hs.prodIncidents ?? 0,
+      refactoringSuggestion: hs.refactoringSuggestion,
+    }
+  })
 }
