@@ -1,0 +1,528 @@
+{
+  "repo": {
+    "name": "acme-saas-platform",
+    "description": "A full-stack SaaS platform with authentication, billing, and team management",
+    "totalFiles": 186,
+    "totalLOC": 14280,
+    "difficulty": "Medium",
+    "risk": "Medium",
+    "topRisk": "src/middleware/auth.ts"
+  },
+  "directories": [
+    { "path": "src", "label": "Source Root", "fileCount": 42, "totalLOC": 12800 },
+    { "path": "src/auth", "label": "Authentication", "fileCount": 5, "totalLOC": 620 },
+    { "path": "src/middleware", "label": "Middleware", "fileCount": 4, "totalLOC": 380 },
+    { "path": "src/routes", "label": "API Routes", "fileCount": 6, "totalLOC": 890 },
+    { "path": "src/models", "label": "Database Models", "fileCount": 5, "totalLOC": 540 },
+    { "path": "src/components", "label": "UI Components", "fileCount": 12, "totalLOC": 2400 },
+    { "path": "src/hooks", "label": "React Hooks", "fileCount": 4, "totalLOC": 320 },
+    { "path": "src/styles", "label": "Styling", "fileCount": 3, "totalLOC": 480 },
+    { "path": "src/utils", "label": "Utilities", "fileCount": 5, "totalLOC": 290 },
+    { "path": "src/config", "label": "Configuration", "fileCount": 3, "totalLOC": 180 },
+    { "path": "src/services", "label": "Services", "fileCount": 6, "totalLOC": 1100 },
+    { "path": "src/pages", "label": "Pages", "fileCount": 8, "totalLOC": 1600 },
+    { "path": "tests", "label": "Tests", "fileCount": 8, "totalLOC": 1480 }
+  ],
+  "files": [
+    { "path": "src/auth/login.ts", "directory": "src/auth", "linesOfCode": 142, "imports": ["../models/user", "../middleware/auth", "../config/oauth", "../utils/logger"], "riskScore": 6.2, "semanticPurpose": "Handles user login flow, session creation, and credential validation", "riskAnalysis": "Medium coupling — imports 4 core modules. Login logic mixes with session management.", "refactoringSuggestion": "Extract session creation into a separate service", "prodIncidents": 1, "lastModified": "2025-12-15", "fileType": "backend" },
+    { "path": "src/auth/session.ts", "directory": "src/auth", "linesOfCode": 98, "imports": ["../models/user", "../config/jwt"], "riskScore": 4.1, "semanticPurpose": "Session token generation, validation, and refresh logic", "riskAnalysis": "Low risk — well-isolated, minimal dependencies", "refactoringSuggestion": "Add token rotation for enhanced security", "prodIncidents": 0, "lastModified": "2025-11-20", "fileType": "backend" },
+    { "path": "src/auth/register.ts", "directory": "src/auth", "linesOfCode": 118, "imports": ["../models/user", "../services/email", "../utils/validation"], "riskScore": 3.8, "semanticPurpose": "User registration flow with email verification", "riskAnalysis": "Low risk — straightforward CRUD with email side-effect", "refactoringSuggestion": "Consider adding rate limiting", "prodIncidents": 0, "lastModified": "2025-10-05", "fileType": "backend" },
+    { "path": "src/auth/password-reset.ts", "directory": "src/auth", "linesOfCode": 86, "imports": ["../models/user", "../services/email", "../config/jwt"], "riskScore": 5.0, "semanticPurpose": "Password reset flow with time-limited tokens", "riskAnalysis": "Medium — token expiry logic is manual, not using a library", "refactoringSuggestion": "Use established token library instead of manual expiry checks", "prodIncidents": 1, "lastModified": "2025-09-18", "fileType": "backend" },
+    { "path": "src/auth/oauth.ts", "directory": "src/auth", "linesOfCode": 64, "imports": ["../config/oauth", "../models/user"], "riskScore": 3.2, "semanticPurpose": "OAuth provider integration stub — currently only GitHub", "riskAnalysis": "Low risk but incomplete — only GitHub implemented", "refactoringSuggestion": "Abstract provider interface for easy extension", "prodIncidents": 0, "lastModified": "2025-08-22", "fileType": "backend" },
+
+    { "path": "src/middleware/auth.ts", "directory": "src/middleware", "linesOfCode": 156, "imports": ["../auth/session", "../models/user", "../config/jwt", "../utils/logger", "../services/analytics"], "riskScore": 9.2, "semanticPurpose": "Authentication middleware — validates tokens, manages sessions, handles rate-limiting", "riskAnalysis": "GOD MODULE — handles auth + logging + rate-limiting + analytics. 5 imports, 0 dedicated tests. Single point of failure for all authenticated routes.", "refactoringSuggestion": "Split into 3 focused middlewares: authValidation, rateLimiter, analyticsTracker", "prodIncidents": 3, "lastModified": "2026-01-10", "fileType": "backend" },
+    { "path": "src/middleware/cors.ts", "directory": "src/middleware", "linesOfCode": 42, "imports": ["../config/env"], "riskScore": 2.1, "semanticPurpose": "CORS configuration middleware", "riskAnalysis": "Low risk — simple configuration pass-through", "refactoringSuggestion": "None needed", "prodIncidents": 0, "lastModified": "2025-06-12", "fileType": "backend" },
+    { "path": "src/middleware/error-handler.ts", "directory": "src/middleware", "linesOfCode": 88, "imports": ["../utils/logger", "../services/sentry"], "riskScore": 4.5, "semanticPurpose": "Global error handler — catches unhandled errors and formats responses", "riskAnalysis": "Medium — silently catches some errors that should propagate", "refactoringSuggestion": "Add error categorization to distinguish retriable vs fatal errors", "prodIncidents": 1, "lastModified": "2025-11-03", "fileType": "backend" },
+    { "path": "src/middleware/rate-limit.ts", "directory": "src/middleware", "linesOfCode": 94, "imports": ["../config/env", "../utils/logger"], "riskScore": 3.8, "semanticPurpose": "Rate limiting middleware using sliding window algorithm", "riskAnalysis": "Low risk — well-isolated but in-memory only (no Redis)", "refactoringSuggestion": "Migrate to Redis-backed rate limiting for multi-instance deployments", "prodIncidents": 0, "lastModified": "2025-10-15", "fileType": "backend" },
+
+    { "path": "src/routes/auth.routes.ts", "directory": "src/routes", "linesOfCode": 76, "imports": ["../auth/login", "../auth/register", "../auth/password-reset", "../auth/oauth", "../middleware/auth"], "riskScore": 5.5, "semanticPurpose": "Authentication route definitions — login, register, OAuth callbacks", "riskAnalysis": "Medium — aggregates all auth handlers, changes here affect all auth flows", "refactoringSuggestion": "Group routes by auth provider for clarity", "prodIncidents": 0, "lastModified": "2025-12-20", "fileType": "backend" },
+    { "path": "src/routes/billing.routes.ts", "directory": "src/routes", "linesOfCode": 134, "imports": ["../services/stripe", "../middleware/auth", "../models/subscription"], "riskScore": 7.8, "semanticPurpose": "Billing and subscription management routes", "riskAnalysis": "High — handles money. Stripe webhook verification is manual.", "refactoringSuggestion": "Add idempotency keys for all payment operations", "prodIncidents": 2, "lastModified": "2026-01-05", "fileType": "backend" },
+    { "path": "src/routes/team.routes.ts", "directory": "src/routes", "linesOfCode": 98, "imports": ["../models/team", "../models/user", "../middleware/auth"], "riskScore": 4.2, "semanticPurpose": "Team management — create, invite, remove members", "riskAnalysis": "Medium — permission checks are inline, not middleware-based", "refactoringSuggestion": "Extract permission logic into a reusable authorization middleware", "prodIncidents": 0, "lastModified": "2025-11-28", "fileType": "backend" },
+    { "path": "src/routes/user.routes.ts", "directory": "src/routes", "linesOfCode": 82, "imports": ["../models/user", "../middleware/auth", "../services/upload"], "riskScore": 3.5, "semanticPurpose": "User profile management — update, avatar upload, preferences", "riskAnalysis": "Low risk — straightforward CRUD", "refactoringSuggestion": "Add input sanitization for profile fields", "prodIncidents": 0, "lastModified": "2025-10-20", "fileType": "backend" },
+    { "path": "src/routes/api.routes.ts", "directory": "src/routes", "linesOfCode": 45, "imports": ["./auth.routes", "./billing.routes", "./team.routes", "./user.routes", "./webhook.routes"], "riskScore": 2.0, "semanticPurpose": "Route aggregator — mounts all sub-routers", "riskAnalysis": "Low risk — pure routing, no logic", "refactoringSuggestion": "None needed", "prodIncidents": 0, "lastModified": "2025-12-20", "fileType": "backend" },
+    { "path": "src/routes/webhook.routes.ts", "directory": "src/routes", "linesOfCode": 112, "imports": ["../services/stripe", "../models/subscription", "../utils/logger"], "riskScore": 8.1, "semanticPurpose": "Webhook handlers for Stripe events — subscription updates, payment failures", "riskAnalysis": "High — webhook retries aren't idempotent. Duplicate events can cause double-charges.", "refactoringSuggestion": "Add event deduplication using Stripe event IDs", "prodIncidents": 2, "lastModified": "2026-01-08", "fileType": "backend" },
+
+    { "path": "src/models/user.ts", "directory": "src/models", "linesOfCode": 98, "imports": ["../config/database"], "riskScore": 4.8, "semanticPurpose": "User model — schema, validation, and query methods", "riskAnalysis": "Medium — uses migration system. Adding fields requires a migration file.", "refactoringSuggestion": "Add index on email field for faster lookups", "prodIncidents": 0, "lastModified": "2025-12-01", "fileType": "backend" },
+    { "path": "src/models/team.ts", "directory": "src/models", "linesOfCode": 76, "imports": ["../config/database", "./user"], "riskScore": 3.5, "semanticPurpose": "Team model with member relationships", "riskAnalysis": "Low risk — clean schema with proper foreign keys", "refactoringSuggestion": "Add cascade delete for team dissolution", "prodIncidents": 0, "lastModified": "2025-11-15", "fileType": "backend" },
+    { "path": "src/models/subscription.ts", "directory": "src/models", "linesOfCode": 88, "imports": ["../config/database", "./user", "./team"], "riskScore": 5.2, "semanticPurpose": "Subscription model — plan types, billing cycles, status tracking", "riskAnalysis": "Medium — status transitions aren't validated (can go from 'cancelled' to 'active' without payment)", "refactoringSuggestion": "Implement a state machine for subscription status transitions", "prodIncidents": 1, "lastModified": "2025-12-18", "fileType": "backend" },
+    { "path": "src/models/invite.ts", "directory": "src/models", "linesOfCode": 54, "imports": ["../config/database", "./team"], "riskScore": 2.8, "semanticPurpose": "Team invitation model with expiry tokens", "riskAnalysis": "Low risk — simple and well-scoped", "refactoringSuggestion": "Add automatic cleanup of expired invites", "prodIncidents": 0, "lastModified": "2025-09-10", "fileType": "backend" },
+    { "path": "src/models/audit-log.ts", "directory": "src/models", "linesOfCode": 42, "imports": ["../config/database"], "riskScore": 1.5, "semanticPurpose": "Audit log model — write-only event recording", "riskAnalysis": "Very low risk — append-only, no reads in critical path", "refactoringSuggestion": "None needed", "prodIncidents": 0, "lastModified": "2025-08-01", "fileType": "backend" },
+
+    { "path": "src/components/LoginForm.tsx", "directory": "src/components", "linesOfCode": 186, "imports": ["../hooks/useAuth", "../utils/validation", "./Button", "./Input", "./OAuthButton"], "riskScore": 5.8, "semanticPurpose": "Login form component with email/password and OAuth options", "riskAnalysis": "Medium — mixes form validation, API calls, and OAuth redirect logic", "refactoringSuggestion": "Extract OAuth logic into a separate OAuthLogin component", "prodIncidents": 0, "lastModified": "2025-12-22", "fileType": "frontend" },
+    { "path": "src/components/Dashboard.tsx", "directory": "src/components", "linesOfCode": 248, "imports": ["../hooks/useAuth", "../hooks/useTeam", "../services/analytics", "./Sidebar", "./StatsCard", "./ActivityFeed"], "riskScore": 7.2, "semanticPurpose": "Main dashboard view — displays team stats, activity, and quick actions", "riskAnalysis": "High — large component doing too much. Mixes data fetching, layout, and business logic.", "refactoringSuggestion": "Split into DashboardLayout, DashboardStats, and DashboardActivity", "prodIncidents": 0, "lastModified": "2026-01-12", "fileType": "frontend" },
+    { "path": "src/components/BillingPanel.tsx", "directory": "src/components", "linesOfCode": 198, "imports": ["../hooks/useAuth", "../services/stripe", "../models/subscription", "./PricingCard", "./PaymentForm"], "riskScore": 7.5, "semanticPurpose": "Billing management panel — plan selection, payment method, invoices", "riskAnalysis": "High — directly interfaces with Stripe. Error handling is inconsistent.", "refactoringSuggestion": "Centralize all Stripe interactions through a billing service layer", "prodIncidents": 1, "lastModified": "2026-01-06", "fileType": "frontend" },
+    { "path": "src/components/TeamManager.tsx", "directory": "src/components", "linesOfCode": 164, "imports": ["../hooks/useTeam", "../models/team", "./MemberCard", "./InviteModal"], "riskScore": 4.0, "semanticPurpose": "Team management UI — member list, invitations, role changes", "riskAnalysis": "Low-medium — clean component structure", "refactoringSuggestion": "Add optimistic UI updates for better UX", "prodIncidents": 0, "lastModified": "2025-11-30", "fileType": "frontend" },
+    { "path": "src/components/Button.tsx", "directory": "src/components", "linesOfCode": 62, "imports": [], "riskScore": 1.0, "semanticPurpose": "Reusable button component with variants", "riskAnalysis": "Very low risk — pure UI component", "refactoringSuggestion": "None needed", "prodIncidents": 0, "lastModified": "2025-07-15", "fileType": "frontend" },
+    { "path": "src/components/Input.tsx", "directory": "src/components", "linesOfCode": 58, "imports": [], "riskScore": 1.0, "semanticPurpose": "Reusable input component with validation states", "riskAnalysis": "Very low risk — pure UI component", "refactoringSuggestion": "None needed", "prodIncidents": 0, "lastModified": "2025-07-15", "fileType": "frontend" },
+    { "path": "src/components/Sidebar.tsx", "directory": "src/components", "linesOfCode": 94, "imports": ["../hooks/useAuth", "./NavLink"], "riskScore": 2.0, "semanticPurpose": "Application sidebar with navigation links", "riskAnalysis": "Low risk", "refactoringSuggestion": "None needed", "prodIncidents": 0, "lastModified": "2025-09-20", "fileType": "frontend" },
+    { "path": "src/components/OAuthButton.tsx", "directory": "src/components", "linesOfCode": 48, "imports": ["../config/oauth"], "riskScore": 2.5, "semanticPurpose": "OAuth provider button — renders Google/GitHub login buttons", "riskAnalysis": "Low risk — stateless component", "refactoringSuggestion": "None needed", "prodIncidents": 0, "lastModified": "2025-08-25", "fileType": "frontend" },
+    { "path": "src/components/Navbar.tsx", "directory": "src/components", "linesOfCode": 78, "imports": ["../hooks/useAuth", "./Button"], "riskScore": 1.8, "semanticPurpose": "Top navigation bar with user menu and notifications", "riskAnalysis": "Low risk", "refactoringSuggestion": "None needed", "prodIncidents": 0, "lastModified": "2025-10-10", "fileType": "frontend" },
+    { "path": "src/components/SettingsPanel.tsx", "directory": "src/components", "linesOfCode": 142, "imports": ["../hooks/useAuth", "../services/upload", "./Input", "./Button"], "riskScore": 3.2, "semanticPurpose": "User settings — profile, preferences, notifications, danger zone", "riskAnalysis": "Low risk — well-structured with clear sections", "refactoringSuggestion": "None needed", "prodIncidents": 0, "lastModified": "2025-11-05", "fileType": "frontend" },
+    { "path": "src/components/StatsCard.tsx", "directory": "src/components", "linesOfCode": 36, "imports": [], "riskScore": 1.0, "semanticPurpose": "Reusable statistics display card", "riskAnalysis": "Very low risk", "refactoringSuggestion": "None needed", "prodIncidents": 0, "lastModified": "2025-08-01", "fileType": "frontend" },
+    { "path": "src/components/ActivityFeed.tsx", "directory": "src/components", "linesOfCode": 88, "imports": ["../models/audit-log"], "riskScore": 2.0, "semanticPurpose": "Activity feed showing recent team actions", "riskAnalysis": "Low risk", "refactoringSuggestion": "None needed", "prodIncidents": 0, "lastModified": "2025-09-15", "fileType": "frontend" },
+
+    { "path": "src/hooks/useAuth.ts", "directory": "src/hooks", "linesOfCode": 112, "imports": ["../auth/session", "../models/user", "../config/jwt"], "riskScore": 5.5, "semanticPurpose": "Authentication hook — login state, token refresh, user context", "riskAnalysis": "Medium — manages both auth state and API calls. Token refresh has a race condition.", "refactoringSuggestion": "Add mutex/lock for concurrent token refresh requests", "prodIncidents": 1, "lastModified": "2025-12-10", "fileType": "frontend" },
+    { "path": "src/hooks/useTeam.ts", "directory": "src/hooks", "linesOfCode": 86, "imports": ["../models/team", "../models/user"], "riskScore": 3.0, "semanticPurpose": "Team data hook — members, invites, permissions", "riskAnalysis": "Low risk — clean data fetching hook", "refactoringSuggestion": "None needed", "prodIncidents": 0, "lastModified": "2025-11-18", "fileType": "frontend" },
+    { "path": "src/hooks/useSubscription.ts", "directory": "src/hooks", "linesOfCode": 74, "imports": ["../models/subscription", "../services/stripe"], "riskScore": 4.2, "semanticPurpose": "Subscription state hook — current plan, usage, upgrade flows", "riskAnalysis": "Medium — Stripe state sync can lag behind webhook updates", "refactoringSuggestion": "Add polling fallback when WebSocket connection drops", "prodIncidents": 0, "lastModified": "2025-12-05", "fileType": "frontend" },
+    { "path": "src/hooks/useNotifications.ts", "directory": "src/hooks", "linesOfCode": 48, "imports": ["../services/websocket"], "riskScore": 2.0, "semanticPurpose": "Real-time notification hook via WebSocket", "riskAnalysis": "Low risk", "refactoringSuggestion": "None needed", "prodIncidents": 0, "lastModified": "2025-10-01", "fileType": "frontend" },
+
+    { "path": "src/services/stripe.ts", "directory": "src/services", "linesOfCode": 198, "imports": ["../config/env", "../models/subscription", "../utils/logger"], "riskScore": 8.5, "semanticPurpose": "Stripe API wrapper — customer creation, subscription management, webhook processing", "riskAnalysis": "HIGH RISK — Core payment logic. Webhook signature verification is custom (not using Stripe SDK). No retry handling.", "refactoringSuggestion": "Use official Stripe webhook helper. Add idempotency keys.", "prodIncidents": 3, "lastModified": "2026-01-08", "fileType": "backend" },
+    { "path": "src/services/email.ts", "directory": "src/services", "linesOfCode": 86, "imports": ["../config/env", "../utils/logger"], "riskScore": 2.5, "semanticPurpose": "Email service — transactional emails via SendGrid", "riskAnalysis": "Low risk — fire-and-forget with logging", "refactoringSuggestion": "Add email template versioning", "prodIncidents": 0, "lastModified": "2025-09-01", "fileType": "backend" },
+    { "path": "src/services/analytics.ts", "directory": "src/services", "linesOfCode": 64, "imports": ["../config/env"], "riskScore": 1.5, "semanticPurpose": "Analytics event tracking wrapper", "riskAnalysis": "Very low risk — non-critical path", "refactoringSuggestion": "None needed", "prodIncidents": 0, "lastModified": "2025-08-15", "fileType": "backend" },
+    { "path": "src/services/upload.ts", "directory": "src/services", "linesOfCode": 72, "imports": ["../config/env", "../utils/logger"], "riskScore": 3.0, "semanticPurpose": "File upload service — S3 integration for avatars and attachments", "riskAnalysis": "Low risk — well-isolated", "refactoringSuggestion": "Add file size and type validation", "prodIncidents": 0, "lastModified": "2025-10-20", "fileType": "backend" },
+    { "path": "src/services/websocket.ts", "directory": "src/services", "linesOfCode": 94, "imports": ["../config/env", "../utils/logger"], "riskScore": 4.0, "semanticPurpose": "WebSocket server for real-time notifications", "riskAnalysis": "Medium — no automatic reconnection logic", "refactoringSuggestion": "Add heartbeat and reconnection handling", "prodIncidents": 0, "lastModified": "2025-10-01", "fileType": "backend" },
+    { "path": "src/services/sentry.ts", "directory": "src/services", "linesOfCode": 38, "imports": ["../config/env"], "riskScore": 1.0, "semanticPurpose": "Sentry error reporting initialization", "riskAnalysis": "Very low risk", "refactoringSuggestion": "None needed", "prodIncidents": 0, "lastModified": "2025-07-01", "fileType": "backend" },
+
+    { "path": "src/config/database.ts", "directory": "src/config", "linesOfCode": 42, "imports": ["./env"], "riskScore": 3.0, "semanticPurpose": "Database connection configuration and pool management", "riskAnalysis": "Low risk but critical — connection pool settings affect all queries", "refactoringSuggestion": "Add connection health checks", "prodIncidents": 0, "lastModified": "2025-07-20", "fileType": "config" },
+    { "path": "src/config/oauth.ts", "directory": "src/config", "linesOfCode": 38, "imports": ["./env"], "riskScore": 2.0, "semanticPurpose": "OAuth provider configuration — client IDs, secrets, redirect URIs", "riskAnalysis": "Low risk — pure configuration", "refactoringSuggestion": "None needed", "prodIncidents": 0, "lastModified": "2025-08-22", "fileType": "config" },
+    { "path": "src/config/env.ts", "directory": "src/config", "linesOfCode": 28, "imports": [], "riskScore": 1.0, "semanticPurpose": "Environment variable loader and validator", "riskAnalysis": "Very low risk", "refactoringSuggestion": "None needed", "prodIncidents": 0, "lastModified": "2025-06-01", "fileType": "config" },
+    { "path": "src/config/jwt.ts", "directory": "src/config", "linesOfCode": 32, "imports": ["./env"], "riskScore": 2.5, "semanticPurpose": "JWT configuration — secret, expiry, algorithm settings", "riskAnalysis": "Low risk but security-sensitive", "refactoringSuggestion": "Rotate JWT secrets periodically", "prodIncidents": 0, "lastModified": "2025-07-10", "fileType": "config" },
+
+    { "path": "src/styles/theme.ts", "directory": "src/styles", "linesOfCode": 86, "imports": [], "riskScore": 1.5, "semanticPurpose": "Design tokens — colors, spacing, typography", "riskAnalysis": "Very low risk", "refactoringSuggestion": "None needed", "prodIncidents": 0, "lastModified": "2025-09-01", "fileType": "frontend" },
+    { "path": "src/styles/globals.css", "directory": "src/styles", "linesOfCode": 220, "imports": [], "riskScore": 2.0, "semanticPurpose": "Global styles and CSS reset", "riskAnalysis": "Low risk", "refactoringSuggestion": "None needed", "prodIncidents": 0, "lastModified": "2025-09-01", "fileType": "frontend" },
+    { "path": "src/styles/components.css", "directory": "src/styles", "linesOfCode": 174, "imports": [], "riskScore": 2.0, "semanticPurpose": "Component-specific styles", "riskAnalysis": "Low risk", "refactoringSuggestion": "Consider CSS modules for scoping", "prodIncidents": 0, "lastModified": "2025-10-15", "fileType": "frontend" },
+
+    { "path": "src/utils/logger.ts", "directory": "src/utils", "linesOfCode": 48, "imports": ["../config/env"], "riskScore": 1.0, "semanticPurpose": "Structured logging utility", "riskAnalysis": "Very low risk", "refactoringSuggestion": "None needed", "prodIncidents": 0, "lastModified": "2025-06-15", "fileType": "backend" },
+    { "path": "src/utils/validation.ts", "directory": "src/utils", "linesOfCode": 72, "imports": [], "riskScore": 1.5, "semanticPurpose": "Input validation helpers — email, password, URL", "riskAnalysis": "Very low risk — pure functions", "refactoringSuggestion": "None needed", "prodIncidents": 0, "lastModified": "2025-07-20", "fileType": "backend" },
+    { "path": "src/utils/crypto.ts", "directory": "src/utils", "linesOfCode": 56, "imports": [], "riskScore": 3.5, "semanticPurpose": "Cryptographic helpers — hashing, token generation", "riskAnalysis": "Low-medium — security-sensitive but uses standard library", "refactoringSuggestion": "Ensure bcrypt rounds are configurable", "prodIncidents": 0, "lastModified": "2025-07-25", "fileType": "backend" },
+    { "path": "src/utils/rate-limiter.ts", "directory": "src/utils", "linesOfCode": 64, "imports": ["../config/env"], "riskScore": 3.0, "semanticPurpose": "Rate limiting utility with sliding window algorithm", "riskAnalysis": "Low risk — in-memory store", "refactoringSuggestion": "Consider Redis backend for production", "prodIncidents": 0, "lastModified": "2025-10-15", "fileType": "backend" },
+    { "path": "src/utils/localStorage.ts", "directory": "src/utils", "linesOfCode": 28, "imports": [], "riskScore": 1.0, "semanticPurpose": "LocalStorage wrapper with JSON serialization", "riskAnalysis": "Very low risk", "refactoringSuggestion": "None needed", "prodIncidents": 0, "lastModified": "2025-07-01", "fileType": "frontend" },
+
+    { "path": "tests/auth.test.ts", "directory": "tests", "linesOfCode": 198, "imports": ["../src/auth/login", "../src/auth/register", "../src/auth/session"], "riskScore": 2.0, "semanticPurpose": "Authentication flow integration tests", "riskAnalysis": "Low risk — test file. Missing OAuth tests.", "refactoringSuggestion": "Add OAuth callback tests", "prodIncidents": 0, "lastModified": "2025-12-20", "fileType": "test" },
+    { "path": "tests/billing.test.ts", "directory": "tests", "linesOfCode": 234, "imports": ["../src/services/stripe", "../src/routes/billing.routes"], "riskScore": 2.5, "semanticPurpose": "Billing and subscription tests", "riskAnalysis": "Low risk — but webhook tests are incomplete", "refactoringSuggestion": "Add webhook retry scenario tests", "prodIncidents": 0, "lastModified": "2026-01-06", "fileType": "test" },
+    { "path": "tests/team.test.ts", "directory": "tests", "linesOfCode": 156, "imports": ["../src/models/team", "../src/routes/team.routes"], "riskScore": 1.5, "semanticPurpose": "Team management tests", "riskAnalysis": "Low risk — comprehensive coverage", "refactoringSuggestion": "None needed", "prodIncidents": 0, "lastModified": "2025-11-28", "fileType": "test" },
+    { "path": "tests/middleware.test.ts", "directory": "tests", "linesOfCode": 142, "imports": ["../src/middleware/auth", "../src/middleware/rate-limit"], "riskScore": 3.0, "semanticPurpose": "Middleware unit tests", "riskAnalysis": "Medium — auth middleware has 0 dedicated tests despite 3 prod incidents", "refactoringSuggestion": "Add auth middleware edge case tests urgently", "prodIncidents": 0, "lastModified": "2025-10-20", "fileType": "test" },
+    { "path": "tests/user.test.ts", "directory": "tests", "linesOfCode": 112, "imports": ["../src/models/user", "../src/routes/user.routes"], "riskScore": 1.5, "semanticPurpose": "User model and route tests", "riskAnalysis": "Low risk", "refactoringSuggestion": "None needed", "prodIncidents": 0, "lastModified": "2025-10-25", "fileType": "test" },
+    { "path": "tests/webhook.test.ts", "directory": "tests", "linesOfCode": 178, "imports": ["../src/routes/webhook.routes", "../src/services/stripe"], "riskScore": 2.0, "semanticPurpose": "Webhook handling tests", "riskAnalysis": "Low risk — but missing retry/idempotency tests", "refactoringSuggestion": "Add duplicate event handling tests", "prodIncidents": 0, "lastModified": "2026-01-08", "fileType": "test" },
+    { "path": "tests/integration/payment-flow.test.ts", "directory": "tests", "linesOfCode": 264, "imports": ["../src/services/stripe", "../src/models/subscription", "../src/auth/login"], "riskScore": 2.0, "semanticPurpose": "End-to-end payment flow integration test", "riskAnalysis": "Low risk — comprehensive but slow", "refactoringSuggestion": "Add parallel test execution", "prodIncidents": 0, "lastModified": "2026-01-10", "fileType": "test" },
+    { "path": "tests/setup.ts", "directory": "tests", "linesOfCode": 48, "imports": ["../src/config/database", "../src/config/env"], "riskScore": 1.0, "semanticPurpose": "Test environment setup and teardown", "riskAnalysis": "Very low risk", "refactoringSuggestion": "None needed", "prodIncidents": 0, "lastModified": "2025-06-01", "fileType": "test" }
+  ],
+  "tasks": {
+    "Add Google OAuth": {
+      "confidence": 91,
+      "confidenceReason": "Atlas has analyzed similar authentication flows in 2,400+ repositories",
+      "risk": "Medium",
+      "estimatedEffort": "3h 40m",
+      "summary": "Extend the existing authentication system to support Google as an OAuth provider. The codebase already has a GitHub OAuth stub that can serve as a template.",
+      "prerequisites": [
+        {
+          "concept": "Authentication System",
+          "description": "Understand how the existing login flow processes credentials and creates sessions",
+          "files": ["src/auth/login.ts", "src/auth/session.ts"],
+          "estimatedTime": "20 min"
+        },
+        {
+          "concept": "Middleware Pipeline",
+          "description": "The auth middleware validates tokens on every request. Your OAuth tokens must pass through this.",
+          "files": ["src/middleware/auth.ts"],
+          "estimatedTime": "15 min"
+        }
+      ],
+      "relevantFiles": [
+        {
+          "path": "src/auth/oauth.ts",
+          "priority": "primary",
+          "reason": "Currently only supports GitHub. Add Google provider here using the same interface pattern.",
+          "lines": "12-48",
+          "linesOfCode": 64,
+          "riskScore": 3.2
+        },
+        {
+          "path": "src/middleware/auth.ts",
+          "priority": "primary",
+          "reason": "Token validation must support Google's JWT format alongside existing session tokens.",
+          "lines": "34-67",
+          "linesOfCode": 156,
+          "riskScore": 9.2,
+          "warning": "This file has caused 3 production incidents. It handles auth + logging + rate-limiting in one place. Webhook retries aren't tested."
+        },
+        {
+          "path": "src/routes/auth.routes.ts",
+          "priority": "secondary",
+          "reason": "Add /auth/google and /auth/google/callback routes.",
+          "linesOfCode": 76,
+          "riskScore": 5.5
+        },
+        {
+          "path": "src/config/oauth.ts",
+          "priority": "secondary",
+          "reason": "Add Google client ID, secret, and redirect URI to OAuth configuration.",
+          "linesOfCode": 38,
+          "riskScore": 2.0
+        },
+        {
+          "path": "src/models/user.ts",
+          "priority": "secondary",
+          "reason": "Add googleId field to user schema. This requires a database migration.",
+          "linesOfCode": 98,
+          "riskScore": 4.8,
+          "warning": "Uses a migration system — adding a field requires a migration file."
+        },
+        {
+          "path": "tests/auth.test.ts",
+          "priority": "secondary",
+          "reason": "Add Google OAuth callback integration tests. Currently missing OAuth test coverage.",
+          "linesOfCode": 198,
+          "riskScore": 2.0
+        }
+      ],
+      "ignoredCount": 180,
+      "route": [
+        { "file": "src/config/oauth.ts", "action": "Add Google credentials", "order": 1 },
+        { "file": "src/models/user.ts", "action": "Add googleId field + migration", "order": 2 },
+        { "file": "src/auth/oauth.ts", "action": "Implement Google provider", "order": 3 },
+        { "file": "src/middleware/auth.ts", "action": "Support Google JWT validation", "order": 4 },
+        { "file": "src/routes/auth.routes.ts", "action": "Wire up Google OAuth routes", "order": 5 },
+        { "file": "tests/auth.test.ts", "action": "Add OAuth flow tests", "order": 6 }
+      ],
+      "knownTraps": [
+        {
+          "severity": "high",
+          "file": "src/middleware/auth.ts",
+          "title": "God Module — 3 Production Incidents",
+          "description": "This file handles auth + logging + rate-limiting + analytics in one place. It has caused 3 production outages. The most common failure: webhook retries aren't tested, leading to duplicate session creation.",
+          "recommendation": "Review tests/middleware.test.ts before editing. Consider splitting this file first."
+        },
+        {
+          "severity": "medium",
+          "file": "src/models/user.ts",
+          "title": "Migration Required",
+          "description": "This model uses a migration system. Adding the googleId field requires creating a new migration file, not just editing the schema.",
+          "recommendation": "Check existing migrations in db/migrations/ for the pattern before creating a new one."
+        },
+        {
+          "severity": "low",
+          "file": "src/auth/oauth.ts",
+          "title": "Provider Abstraction Incomplete",
+          "description": "The current GitHub OAuth implementation is a stub without proper error handling. Don't copy its pattern directly.",
+          "recommendation": "Add proper error handling for OAuth callback failures (user denies access, token exchange fails)."
+        }
+      ]
+    },
+    "Fix login bug": {
+      "confidence": 87,
+      "confidenceReason": "Atlas has identified the most common login failure patterns in this codebase",
+      "risk": "Low",
+      "estimatedEffort": "1h 20m",
+      "summary": "Debug the login flow. Based on the codebase structure, the most likely failure points are in credential validation and session creation.",
+      "prerequisites": [],
+      "relevantFiles": [
+        {
+          "path": "src/auth/login.ts",
+          "priority": "primary",
+          "reason": "Core login logic. Error messages are caught silently at line 72 — add console.error to surface the actual failure.",
+          "lines": "67-89",
+          "linesOfCode": 142,
+          "riskScore": 6.2,
+          "warning": "Errors are silently caught at L72. This hides the actual root cause."
+        },
+        {
+          "path": "src/auth/session.ts",
+          "priority": "primary",
+          "reason": "Session validation may be failing silently. Check token expiry logic.",
+          "lines": "23-45",
+          "linesOfCode": 98,
+          "riskScore": 4.1
+        },
+        {
+          "path": "src/hooks/useAuth.ts",
+          "priority": "secondary",
+          "reason": "Frontend auth hook — check if token refresh has a race condition (known issue).",
+          "linesOfCode": 112,
+          "riskScore": 5.5,
+          "warning": "Token refresh has a known race condition when multiple tabs are open."
+        },
+        {
+          "path": "tests/auth.test.ts",
+          "priority": "secondary",
+          "reason": "Check existing test coverage for the login flow. Missing edge case tests.",
+          "linesOfCode": 198,
+          "riskScore": 2.0
+        }
+      ],
+      "ignoredCount": 182,
+      "route": [
+        { "file": "src/auth/login.ts", "action": "Add error logging at L72, reproduce bug", "order": 1 },
+        { "file": "src/auth/session.ts", "action": "Verify token validation logic", "order": 2 },
+        { "file": "src/hooks/useAuth.ts", "action": "Check for race condition in token refresh", "order": 3 },
+        { "file": "tests/auth.test.ts", "action": "Add test for the bug scenario", "order": 4 }
+      ],
+      "knownTraps": [
+        {
+          "severity": "high",
+          "file": "src/auth/login.ts",
+          "title": "Silent Error Catching",
+          "description": "Line 72 catches all errors without logging. You won't see the actual failure unless you add explicit error output.",
+          "recommendation": "Add console.error(err) inside the catch block before investigating further."
+        },
+        {
+          "severity": "medium",
+          "file": "src/hooks/useAuth.ts",
+          "title": "Token Refresh Race Condition",
+          "description": "When multiple tabs are open, concurrent token refresh requests can invalidate each other, causing intermittent logouts.",
+          "recommendation": "Add a mutex or use a shared BroadcastChannel to coordinate token refresh across tabs."
+        }
+      ]
+    },
+    "Add dark mode": {
+      "confidence": 95,
+      "confidenceReason": "Standard theme implementation — Atlas has seen this pattern in 4,800+ repositories",
+      "risk": "Low",
+      "estimatedEffort": "2h 10m",
+      "summary": "Implement a dark mode toggle. The codebase has a theme system in place but only defines a light palette. Extend it with dark tokens and add a toggle with persistence.",
+      "prerequisites": [
+        {
+          "concept": "Theme System",
+          "description": "Understand the existing design token structure before adding dark variants",
+          "files": ["src/styles/theme.ts"],
+          "estimatedTime": "10 min"
+        }
+      ],
+      "relevantFiles": [
+        {
+          "path": "src/styles/theme.ts",
+          "priority": "primary",
+          "reason": "Create dark palette alongside existing light theme tokens.",
+          "linesOfCode": 86,
+          "riskScore": 1.5
+        },
+        {
+          "path": "src/styles/globals.css",
+          "priority": "primary",
+          "reason": "Update CSS custom properties to use theme tokens.",
+          "linesOfCode": 220,
+          "riskScore": 2.0
+        },
+        {
+          "path": "src/components/Navbar.tsx",
+          "priority": "secondary",
+          "reason": "Add theme toggle button to the navigation bar.",
+          "linesOfCode": 78,
+          "riskScore": 1.8
+        },
+        {
+          "path": "src/utils/localStorage.ts",
+          "priority": "secondary",
+          "reason": "Persist theme preference across sessions.",
+          "linesOfCode": 28,
+          "riskScore": 1.0
+        },
+        {
+          "path": "src/components/Button.tsx",
+          "priority": "secondary",
+          "reason": "Update button variants to use theme-aware colors.",
+          "linesOfCode": 62,
+          "riskScore": 1.0
+        }
+      ],
+      "ignoredCount": 181,
+      "route": [
+        { "file": "src/styles/theme.ts", "action": "Define dark palette tokens", "order": 1 },
+        { "file": "src/styles/globals.css", "action": "Wire up CSS custom properties", "order": 2 },
+        { "file": "src/components/Navbar.tsx", "action": "Add toggle button", "order": 3 },
+        { "file": "src/utils/localStorage.ts", "action": "Add theme persistence", "order": 4 },
+        { "file": "src/components/Button.tsx", "action": "Update variant colors", "order": 5 }
+      ],
+      "knownTraps": [
+        {
+          "severity": "low",
+          "file": "src/styles/globals.css",
+          "title": "Hardcoded Colors",
+          "description": "Some components use hardcoded hex values instead of CSS custom properties. These won't respond to theme changes.",
+          "recommendation": "Search for hardcoded color values and replace with var(--color-*) tokens."
+        }
+      ]
+    },
+    "Improve performance": {
+      "confidence": 78,
+      "confidenceReason": "Performance analysis requires runtime profiling — Atlas can identify structural issues but not runtime bottlenecks",
+      "risk": "Medium",
+      "estimatedEffort": "4h 30m",
+      "summary": "Address structural performance issues. The main suspects are the Dashboard component (too many re-renders), the auth middleware (blocking every request), and missing database indexes.",
+      "prerequisites": [
+        {
+          "concept": "Component Architecture",
+          "description": "Understand React rendering patterns to identify unnecessary re-renders",
+          "files": ["src/components/Dashboard.tsx"],
+          "estimatedTime": "15 min"
+        }
+      ],
+      "relevantFiles": [
+        {
+          "path": "src/components/Dashboard.tsx",
+          "priority": "primary",
+          "reason": "248 LOC component fetching data, managing layout, and running business logic. Likely causing excessive re-renders.",
+          "linesOfCode": 248,
+          "riskScore": 7.2,
+          "warning": "Monolithic component doing data fetching + layout + business logic. Split before optimizing."
+        },
+        {
+          "path": "src/middleware/auth.ts",
+          "priority": "primary",
+          "reason": "Runs on every authenticated request. Contains analytics tracking that could be async.",
+          "linesOfCode": 156,
+          "riskScore": 9.2
+        },
+        {
+          "path": "src/models/user.ts",
+          "priority": "secondary",
+          "reason": "Missing index on email field causes slow lookups on every login.",
+          "linesOfCode": 98,
+          "riskScore": 4.8
+        },
+        {
+          "path": "src/services/websocket.ts",
+          "priority": "secondary",
+          "reason": "No connection pooling — each component creates a new WebSocket connection.",
+          "linesOfCode": 94,
+          "riskScore": 4.0
+        }
+      ],
+      "ignoredCount": 182,
+      "route": [
+        { "file": "src/components/Dashboard.tsx", "action": "Split into 3 components, add React.memo", "order": 1 },
+        { "file": "src/middleware/auth.ts", "action": "Make analytics tracking async", "order": 2 },
+        { "file": "src/models/user.ts", "action": "Add email index", "order": 3 },
+        { "file": "src/services/websocket.ts", "action": "Implement connection singleton", "order": 4 }
+      ],
+      "knownTraps": [
+        {
+          "severity": "high",
+          "file": "src/components/Dashboard.tsx",
+          "title": "Premature Optimization Trap",
+          "description": "Don't micro-optimize renders before splitting the component. The real issue is architectural, not algorithmic.",
+          "recommendation": "Split first, measure second, optimize third."
+        }
+      ]
+    }
+  },
+  "onboarding": {
+    "roles": {
+      "Frontend": {
+        "estimatedTime": "2h 10m",
+        "lessons": [
+          {
+            "title": "Component Architecture",
+            "description": "How the UI is structured — from atomic components (Button, Input) to composed views (Dashboard, BillingPanel)",
+            "keyFiles": ["src/components/Dashboard.tsx", "src/components/Button.tsx", "src/components/LoginForm.tsx"],
+            "estimatedTime": "25 min",
+            "insight": "The Dashboard component is a known monolith (248 LOC). The team plans to split it — keep this in mind."
+          },
+          {
+            "title": "State Management",
+            "description": "Authentication, team data, and subscriptions are managed through custom hooks",
+            "keyFiles": ["src/hooks/useAuth.ts", "src/hooks/useTeam.ts", "src/hooks/useSubscription.ts"],
+            "estimatedTime": "20 min",
+            "insight": "useAuth has a known race condition with token refresh. There's a TODO to add mutex support."
+          },
+          {
+            "title": "Styling System",
+            "description": "Design tokens in theme.ts, global styles in globals.css, component styles in components.css",
+            "keyFiles": ["src/styles/theme.ts", "src/styles/globals.css", "src/styles/components.css"],
+            "estimatedTime": "15 min",
+            "insight": "Some components use hardcoded colors instead of design tokens. This is tech debt — use tokens for new work."
+          },
+          {
+            "title": "API Integration",
+            "description": "How the frontend communicates with the backend through route handlers and services",
+            "keyFiles": ["src/routes/api.routes.ts", "src/services/stripe.ts"],
+            "estimatedTime": "20 min",
+            "insight": "API calls are not centralized — some components call services directly. Follow the hook pattern for new features."
+          }
+        ]
+      },
+      "Backend": {
+        "estimatedTime": "2h 40m",
+        "lessons": [
+          {
+            "title": "API Routes & Middleware",
+            "description": "Request lifecycle: route → middleware pipeline → handler → response",
+            "keyFiles": ["src/routes/api.routes.ts", "src/middleware/auth.ts", "src/middleware/error-handler.ts"],
+            "estimatedTime": "30 min",
+            "insight": "The auth middleware (auth.ts) is a God module — it handles auth + logging + rate-limiting. This is the #1 risk in the codebase."
+          },
+          {
+            "title": "Database Models",
+            "description": "Data layer — User, Team, Subscription, Invite, AuditLog models and their relationships",
+            "keyFiles": ["src/models/user.ts", "src/models/team.ts", "src/models/subscription.ts"],
+            "estimatedTime": "25 min",
+            "insight": "Models use a migration system. Never edit the schema directly — always create a migration file."
+          },
+          {
+            "title": "Authentication",
+            "description": "Login, session management, password reset, and OAuth flows",
+            "keyFiles": ["src/auth/login.ts", "src/auth/session.ts", "src/auth/oauth.ts"],
+            "estimatedTime": "25 min",
+            "insight": "OAuth currently only supports GitHub. Google OAuth is planned as the next integration."
+          },
+          {
+            "title": "Payment System",
+            "description": "Stripe integration for subscriptions, billing, and webhooks",
+            "keyFiles": ["src/services/stripe.ts", "src/routes/billing.routes.ts", "src/routes/webhook.routes.ts"],
+            "estimatedTime": "30 min",
+            "insight": "HIGH RISK AREA: Webhook signature verification is custom (not using Stripe SDK). No idempotency handling. 3 prod incidents."
+          }
+        ]
+      },
+      "Bug Fixes": {
+        "estimatedTime": "1h 30m",
+        "lessons": [
+          {
+            "title": "Known Fragile Files",
+            "description": "Files that have caused production incidents — know these before you touch anything",
+            "keyFiles": ["src/middleware/auth.ts", "src/services/stripe.ts", "src/routes/webhook.routes.ts"],
+            "estimatedTime": "20 min",
+            "insight": "These 3 files account for 8 out of 12 production incidents. Always check test coverage before editing."
+          },
+          {
+            "title": "Error Handling Patterns",
+            "description": "How errors are caught, logged, and propagated through the system",
+            "keyFiles": ["src/middleware/error-handler.ts", "src/utils/logger.ts", "src/services/sentry.ts"],
+            "estimatedTime": "15 min",
+            "insight": "Some catch blocks swallow errors silently (especially in login.ts:L72). Always check for hidden catches."
+          },
+          {
+            "title": "Test Coverage Gaps",
+            "description": "Where tests exist, where they don't, and what to write first",
+            "keyFiles": ["tests/auth.test.ts", "tests/middleware.test.ts", "tests/webhook.test.ts"],
+            "estimatedTime": "20 min",
+            "insight": "auth.ts middleware has 0 dedicated tests despite 3 prod incidents. This is the biggest testing gap."
+          }
+        ]
+      },
+      "Architecture": {
+        "estimatedTime": "3h 00m",
+        "lessons": [
+          {
+            "title": "System Overview",
+            "description": "High-level architecture — frontend, backend, database, external services",
+            "keyFiles": ["src/routes/api.routes.ts", "src/config/database.ts", "src/config/env.ts"],
+            "estimatedTime": "20 min",
+            "insight": "Monolithic architecture with clear separation between routes, models, and services. Ready for microservice extraction."
+          },
+          {
+            "title": "Authentication Architecture",
+            "description": "Complete auth flow — from login form to session management to middleware validation",
+            "keyFiles": ["src/components/LoginForm.tsx", "src/auth/login.ts", "src/middleware/auth.ts", "src/auth/session.ts"],
+            "estimatedTime": "30 min",
+            "insight": "Auth spans both frontend and backend. The useAuth hook manages client state while auth.ts handles server validation."
+          },
+          {
+            "title": "Payment Architecture",
+            "description": "End-to-end billing — from UI to Stripe API to webhook processing",
+            "keyFiles": ["src/components/BillingPanel.tsx", "src/services/stripe.ts", "src/routes/webhook.routes.ts", "src/models/subscription.ts"],
+            "estimatedTime": "35 min",
+            "insight": "This is the riskiest subsystem. Webhook processing is not idempotent — duplicate events cause bugs."
+          },
+          {
+            "title": "Risk Assessment",
+            "description": "Where the technical debt lives and what to prioritize",
+            "keyFiles": ["src/middleware/auth.ts", "src/components/Dashboard.tsx", "src/services/stripe.ts"],
+            "estimatedTime": "25 min",
+            "insight": "Top 3 risks: God middleware (auth.ts, 9.2 risk), Payment bugs (stripe.ts, 8.5 risk), Monolith dashboard (Dashboard.tsx, 7.2 risk)"
+          }
+        ]
+      }
+    }
+  }
+}
