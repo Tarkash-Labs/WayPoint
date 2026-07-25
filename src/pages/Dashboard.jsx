@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useLocation } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import Sidebar from '../components/Sidebar'
 import TaskInput from '../components/TaskInput'
 import AnalysisLoader from '../components/AnalysisLoader'
@@ -21,14 +21,21 @@ const VIEW_TITLES = {
 
 export default function Dashboard() {
   const location = useLocation()
+  const navigate = useNavigate()
   const repoUrl = location.state?.repoUrl || ''
+  
+  // Use search params for view state so browser Back button works
+  const searchParams = new URLSearchParams(location.search)
+  const activeView = searchParams.get('view') || 'task'
+  const setActiveView = (view) => {
+    navigate(`?view=${view}`, { state: location.state })
+  }
 
   // Core data
   const [repoData, setRepoData] = useState(null)       // raw GitHub data
   const [enrichedData, setEnrichedData] = useState(null) // AI-enriched full data
 
   // UI state
-  const [activeView, setActiveView] = useState('task')
   const [selectedTask, setSelectedTask] = useState(null)
 
   // Loading stages

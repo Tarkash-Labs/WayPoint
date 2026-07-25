@@ -1,18 +1,19 @@
 import { useState, useMemo, useRef, Suspense } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
-import { OrbitControls } from '@react-three/drei'
+import { OrbitControls, Edges } from '@react-three/drei'
 import { treemap, hierarchy, treemapSquarify } from 'd3-hierarchy'
 import ErrorBoundary from '../components/ErrorBoundary'
 
+// A single file rendered as a sleek architectural building
 function Building({ position, size, color, file, isHovered, onHover, onUnhover, onClick }) {
   const meshRef = useRef()
   const height = size[1]
 
   useFrame(() => {
     if (meshRef.current) {
-      const targetScale = isHovered ? 1.08 : 1.0
-      meshRef.current.scale.x += (targetScale - meshRef.current.scale.x) * 0.1
-      meshRef.current.scale.z += (targetScale - meshRef.current.scale.z) * 0.1
+      const targetScale = isHovered ? 1.05 : 1.0
+      meshRef.current.scale.x += (targetScale - meshRef.current.scale.x) * 0.15
+      meshRef.current.scale.z += (targetScale - meshRef.current.scale.z) * 0.15
     }
   })
 
@@ -23,24 +24,44 @@ function Building({ position, size, color, file, isHovered, onHover, onUnhover, 
       onPointerOver={(e) => { e.stopPropagation(); onHover() }}
       onPointerOut={onUnhover}
       onClick={(e) => { e.stopPropagation(); onClick() }}
+      castShadow
+      receiveShadow
     >
       <boxGeometry args={[size[0], height, size[2]]} />
-      <meshStandardMaterial
-        color={isHovered ? '#6366f1' : color}
+      {/* Sleek architectural material */}
+      <meshPhysicalMaterial
+        color={isHovered ? '#818cf8' : color}
         emissive={isHovered ? '#4f46e5' : '#000000'}
-        emissiveIntensity={isHovered ? 0.4 : 0}
-        roughness={0.6}
-        metalness={0.15}
+        emissiveIntensity={isHovered ? 0.3 : 0}
+        roughness={0.2}
+        metalness={0.8}
+        clearcoat={0.5}
+        clearcoatRoughness={0.1}
       />
+      {/* Blueprint-style outline */}
+      <Edges scale={1} threshold={15} color={isHovered ? '#ffffff' : 'rgba(255,255,255,0.1)'} />
+    </mesh>
+  )
+}
+
+// A directory rendered as a base platform (district)
+function District({ position, size, name }) {
+  return (
+    <mesh position={[position[0], 0.1, position[2]]} receiveShadow>
+      <boxGeometry args={[size[0], 0.2, size[2]]} />
+      <meshStandardMaterial color="#1e1e2e" roughness={0.9} metalness={0.1} />
+      <Edges scale={1.001} threshold={15} color="rgba(255,255,255,0.05)" />
     </mesh>
   )
 }
 
 function CityFloor({ size }) {
   return (
-    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.05, 0]}>
+    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.05, 0]} receiveShadow>
       <planeGeometry args={[size, size]} />
-      <meshStandardMaterial color="#1a1a2e" roughness={0.95} />
+      <meshStandardMaterial color="#0b0b14" roughness={1} />
+      {/* Subtle grid on the floor */}
+      <gridHelper args={[size, size / 2, '#1f1f3a', '#1f1f3a']} position={[0, 0.01, 0]} />
     </mesh>
   )
 }
@@ -48,8 +69,8 @@ function CityFloor({ size }) {
 function CityScene({ data, onSelectFile }) {
   const [hoveredFile, setHoveredFile] = useState(null)
 
-  const { buildings, gridSize } = useMemo(() => {
-    if (!data?.files || data.files.length === 0) return { buildings: [], gridSize: 20 }
+  const { buildings, districts, gridSize } = useMemo(() => {
+    if (!data?.files || data.files.length === 0) return { buildings: [], districts: [], gridSize: 20 }
 
     // Build hierarchy — group files by top-level directory
     const dirMap = {}
@@ -71,49 +92,72 @@ function CityScene({ data, onSelectFile }) {
       })),
     }
 
-    const size = Math.min(40, Math.max(20, Math.sqrt(data.files.length) * 3))
+    const size = Math.min(50, Math.max(25, Math.sqrt(data.files.length) * 3))
+    
+    // Treemap layout with padding to create "streets" between districts
     const treemapLayout = treemap()
       .size([size, size])
-      .padding(0.8)
-      .paddingOuter(1.5)
+      .paddingInner(0.8)
+      .paddingOuter(2)
+      .paddingTop(1) // Extra space at top of district
       .tile(treemapSquarify)
 
     const rootNode = hierarchy(root).sum((d) => d.value)
     treemapLayout(rootNode)
 
-    const leaves = rootNode.leaves().map((leaf) => {
-      const w = leaf.x1 - leaf.x0
-      const h = leaf.y1 - leaf.y0
-      const x = (leaf.x0 + leaf.x1) / 2 - size / 2
-      const z = (leaf.y0 + leaf.y1) / 2 - size / 2
-      const linesOfCode = leaf.data.file?.linesOfCode || 10
-      const buildingHeight = Math.max(linesOfCode / 25, 0.3)
+    const buildingList = []
+    const districtList = []
 
-      return {
-        position: [x, 0, z],
-        size: [Math.max(w * 0.85, 0.1), Math.min(buildingHeight, 15), Math.max(h * 0.85, 0.1)],
-        file: leaf.data.file,
-        color: getColorForRisk(leaf.data.file?.riskScore || 1),
+    rootNode.each((node) => {
+      const w = node.x1 - node.x0
+      const h = node.y1 - node.y0
+      const x = (node.x0 + node.x1) / 2 - size / 2
+      const z = (node.y0 + node.y1) / 2 - size / 2
+
+      if (node.depth === 1) { // Top-level directory = District
+        districtList.push({
+          name: node.data.name,
+          position: [x, 0, z],
+          size: [Math.max(w, 0.5), 0.2, Math.max(h, 0.5)],
+        })
+      } else if (!node.children && node.data.file) { // Leaf node = Building
+        const linesOfCode = node.data.file.linesOfCode || 10
+        const buildingHeight = Math.max(linesOfCode / 20, 0.5)
+
+        buildingList.push({
+          position: [x, 0, z],
+          // Buildings are slightly smaller than their cell to create gaps
+          size: [Math.max(w * 0.8, 0.1), Math.min(buildingHeight, 18), Math.max(h * 0.8, 0.1)],
+          file: node.data.file,
+          color: getColorForRisk(node.data.file.riskScore || 1),
+        })
       }
     })
 
-    return { buildings: leaves, gridSize: size }
+    return { buildings: buildingList, districts: districtList, gridSize: size }
   }, [data])
 
   if (buildings.length === 0) return null
 
   return (
     <>
-      <ambientLight intensity={0.5} />
-      <directionalLight position={[20, 30, 10]} intensity={0.7} />
-      <directionalLight position={[-10, 20, -10]} intensity={0.25} />
-      <pointLight position={[0, 15, 0]} intensity={0.2} color="#6366f1" />
+      {/* Studio lighting for premium architectural look */}
+      <ambientLight intensity={0.4} />
+      <directionalLight position={[20, 40, 20]} intensity={1.2} castShadow shadow-mapSize={[1024, 1024]} />
+      <directionalLight position={[-20, 20, -20]} intensity={0.5} />
+      <pointLight position={[0, 20, 0]} intensity={0.5} color="#4f46e5" />
 
-      <CityFloor size={gridSize + 10} />
+      <CityFloor size={gridSize + 20} />
 
+      {/* Render Districts (base platforms) */}
+      {districts.map((d, i) => (
+        <District key={`d-${i}`} position={d.position} size={d.size} name={d.name} />
+      ))}
+
+      {/* Render Buildings */}
       {buildings.map((b, i) => (
         <Building
-          key={i}
+          key={`b-${i}`}
           position={b.position}
           size={b.size}
           color={b.color}
@@ -128,21 +172,22 @@ function CityScene({ data, onSelectFile }) {
       <OrbitControls
         enableDamping
         dampingFactor={0.05}
-        maxPolarAngle={Math.PI / 2.1}
-        minDistance={5}
-        maxDistance={80}
+        maxPolarAngle={Math.PI / 2.1} // Prevent going below ground
+        minDistance={10}
+        maxDistance={90}
       />
 
-      <fog attach="fog" args={['#0f0f1a', 25, 70]} />
+      <fog attach="fog" args={['#0b0b14', 30, 90]} />
     </>
   )
 }
 
 function getColorForRisk(score) {
-  if (score >= 8) return '#ef4444'
-  if (score >= 6) return '#f59e0b'
-  if (score >= 4) return '#3b82f6'
-  return '#10b981'
+  // Sophisticated, muted architectural colors
+  if (score >= 8) return '#b91c1c' // Deep Red
+  if (score >= 6) return '#b45309' // Deep Amber
+  if (score >= 4) return '#1d4ed8' // Deep Blue
+  return '#047857' // Deep Green
 }
 
 function FileTooltip({ file }) {
@@ -176,8 +221,9 @@ export default function MapView({ data }) {
           </div>
         }>
           <Canvas
-            camera={{ position: [25, 25, 25], fov: 45 }}
-            style={{ background: '#0f0f1a', borderRadius: 'var(--radius-lg)' }}
+            camera={{ position: [30, 30, 35], fov: 40 }}
+            shadows
+            style={{ background: '#0b0b14', borderRadius: 'var(--radius-lg)' }}
             gl={{ antialias: true, alpha: false }}
             dpr={[1, 1.5]}
           >
@@ -189,19 +235,19 @@ export default function MapView({ data }) {
 
         <div className="map-view__legend">
           <div className="map-view__legend-item">
-            <div className="map-view__legend-dot" style={{ background: '#10b981' }} />
+            <div className="map-view__legend-dot" style={{ background: '#047857' }} />
             Low Risk
           </div>
           <div className="map-view__legend-item">
-            <div className="map-view__legend-dot" style={{ background: '#3b82f6' }} />
+            <div className="map-view__legend-dot" style={{ background: '#1d4ed8' }} />
             Medium
           </div>
           <div className="map-view__legend-item">
-            <div className="map-view__legend-dot" style={{ background: '#f59e0b' }} />
+            <div className="map-view__legend-dot" style={{ background: '#b45309' }} />
             High
           </div>
           <div className="map-view__legend-item">
-            <div className="map-view__legend-dot" style={{ background: '#ef4444' }} />
+            <div className="map-view__legend-dot" style={{ background: '#b91c1c' }} />
             Critical
           </div>
         </div>
