@@ -1,76 +1,147 @@
 export default function Sidebar({ data, activeView, onViewChange, selectedTask }) {
   const views = [
-    { id: 'task', icon: 'bx-message-square-dots', label: 'New Task', section: 'navigate' },
-    { id: 'mission', icon: 'bx-target-lock', label: 'Mission Brief', section: 'navigate', disabled: !selectedTask },
-    { id: 'onboarding', icon: 'bx-book-reader', label: 'AI Onboarding', section: 'learn' },
-    { id: 'hotspots', icon: 'bxs-flame', label: 'Risk Hotspots', section: 'learn', badge: data ? '3' : null },
-    { id: 'map', icon: 'bx-map-alt', label: 'Architecture Map', section: 'visualize' },
+    {
+      id: 'task',
+      label: 'New Task',
+      section: 'navigate',
+      icon: (
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+      ),
+    },
+    {
+      id: 'mission',
+      label: 'Mission Brief',
+      section: 'navigate',
+      disabled: !selectedTask,
+      icon: (
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/>
+        </svg>
+      ),
+    },
+    {
+      id: 'onboarding',
+      label: 'AI Onboarding',
+      section: 'understand',
+      icon: (
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 010 14.14M4.93 4.93a10 10 0 000 14.14"/>
+        </svg>
+      ),
+    },
+    {
+      id: 'hotspots',
+      label: 'Risk Hotspots',
+      section: 'understand',
+      badge: data ? '3' : null,
+      icon: (
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+          <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+        </svg>
+      ),
+    },
+    {
+      id: 'map',
+      label: 'Architecture Map',
+      section: 'visualize',
+      icon: (
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+          <rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+        </svg>
+      ),
+    },
   ]
 
-  const sections = {
-    navigate: 'Navigate',
-    learn: 'Understand',
-    visualize: 'Visualize',
-  }
-
-  const sectionOrder = ['navigate', 'learn', 'visualize']
+  const sections = [
+    { id: 'navigate',   label: 'NAVIGATE' },
+    { id: 'understand', label: 'UNDERSTAND' },
+    { id: 'visualize',  label: 'VISUALIZE' },
+  ]
 
   return (
-    <aside className="sidebar">
-      <div className="sidebar__header">
-        <div className="sidebar__brand">
-          <span>Way</span>point
+    <aside className="hud-sidebar">
+      {/* Logo */}
+      <div className="hud-sidebar__logo">
+        <div className="hud-sidebar__logo-icon">
+          <svg width="18" height="18" viewBox="0 0 32 32" fill="none">
+            <path d="M8 24L16 8L24 24" stroke="url(#sbLogoGrad)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M11 19H21" stroke="url(#sbLogoGrad)" strokeWidth="2" strokeLinecap="round"/>
+            <defs>
+              <linearGradient id="sbLogoGrad" x1="8" y1="8" x2="24" y2="24" gradientUnits="userSpaceOnUse">
+                <stop stopColor="#a855f7"/>
+                <stop offset="1" stopColor="#6366f1"/>
+              </linearGradient>
+            </defs>
+          </svg>
         </div>
-        {data && (
-          <div className="sidebar__repo">
-            <i className="bx bx-git-repo-forked" />
-            {data.repo.name}
-          </div>
-        )}
+        <span className="hud-sidebar__logo-text">Waypoint</span>
       </div>
 
-      <nav className="sidebar__nav">
-        {sectionOrder.map((section) => (
-          <div key={section}>
-            <div className="sidebar__section-title">{sections[section]}</div>
-            {views
-              .filter((v) => v.section === section)
-              .map((view) => (
+      {/* Repo name if available */}
+      {data && (
+        <div className="hud-sidebar__repo">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 00-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0020 4.77 5.07 5.07 0 0019.91 1S18.73.65 16 2.48a13.38 13.38 0 00-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 005 4.77a5.44 5.44 0 00-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 009 18.13V22"/></svg>
+          {data.repo.name}
+        </div>
+      )}
+
+      {/* Navigation */}
+      <nav className="hud-sidebar__nav">
+        {sections.map((section) => {
+          const sectionViews = views.filter((v) => v.section === section.id)
+          if (!sectionViews.length) return null
+          return (
+            <div key={section.id} className="hud-sidebar__section">
+              <div className="hud-sidebar__section-label">{section.label}</div>
+              {sectionViews.map((view) => (
                 <button
                   key={view.id}
-                  className={`sidebar__item ${activeView === view.id ? 'sidebar__item--active' : ''}`}
+                  className={`hud-sidebar__item ${activeView === view.id ? 'hud-sidebar__item--active' : ''} ${view.disabled ? 'hud-sidebar__item--disabled' : ''}`}
                   onClick={() => !view.disabled && onViewChange(view.id)}
-                  style={{ opacity: view.disabled ? 0.4 : 1, cursor: view.disabled ? 'default' : 'pointer' }}
                 >
-                  <i className={`bx ${view.icon} sidebar__item-icon`} />
-                  {view.label}
-                  {view.badge && <span className="sidebar__item-badge">{view.badge}</span>}
+                  <span className="hud-sidebar__item-icon">{view.icon}</span>
+                  <span className="hud-sidebar__item-label">{view.label}</span>
+                  {view.badge && (
+                    <span className="hud-sidebar__badge">{view.badge}</span>
+                  )}
                 </button>
               ))}
-          </div>
-        ))}
+            </div>
+          )
+        })}
       </nav>
 
+      {/* Stats */}
       {data && (
-        <div className="sidebar__stats">
-          <div className="sidebar__stat-row">
-            <span className="sidebar__stat-label">
-              <i className="bx bx-file" /> Files
-            </span>
-            <span className="sidebar__stat-value">{data.repo.totalFiles}</span>
+        <div className="hud-sidebar__stats">
+          <div className="hud-sidebar__stat">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            <span className="hud-sidebar__stat-label">Files</span>
+            <span className="hud-sidebar__stat-value">{data.repo.totalFiles}</span>
           </div>
-          <div className="sidebar__stat-row">
-            <span className="sidebar__stat-label">
-              <i className="bx bx-code-alt" /> Lines of Code
-            </span>
-            <span className="sidebar__stat-value">{data.repo.totalLOC?.toLocaleString()}</span>
+          <div className="hud-sidebar__stat">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            <span className="hud-sidebar__stat-label">Lines of Code</span>
+            <span className="hud-sidebar__stat-value">{data.repo.totalLOC?.toLocaleString()}</span>
           </div>
-          <div className="sidebar__stat-row">
-            <span className="sidebar__stat-label">
-              <i className="bx bx-shield-quarter" /> Difficulty
-            </span>
-            <span className="sidebar__stat-value" style={{ color: data.repo.difficulty === 'High' ? 'var(--color-danger)' : data.repo.difficulty === 'Medium' ? 'var(--color-warning)' : 'var(--color-success)' }}>
-              {data.repo.difficulty}
+          <div className="hud-sidebar__stat">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            <span className="hud-sidebar__stat-label">Difficulty</span>
+            <span
+              className="hud-sidebar__stat-value"
+              style={{
+                color: data.repo.difficulty === 'High'
+                  ? '#f87171'
+                  : data.repo.difficulty === 'Medium'
+                  ? '#fbbf24'
+                  : '#34d399',
+              }}
+            >
+              {data.repo.difficulty || 'Low'}
             </span>
           </div>
         </div>

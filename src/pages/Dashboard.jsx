@@ -270,10 +270,10 @@ export default function Dashboard() {
   // Full-screen loader while repo is being analyzed
   if (isRepoLoading || error) {
     return (
-      <div className="dashboard">
+      <div className="hud-dashboard">
         <Sidebar data={null} activeView={activeView} onViewChange={() => {}} selectedTask={null} />
-        <div className="main">
-          <div className="main__content main__content--centered">
+        <div className="hud-main">
+          <div className="hud-main__content hud-main__content--centered">
             <AnalysisLoader
               currentStage={analysisStage}
               repoName={repoName}
@@ -289,10 +289,10 @@ export default function Dashboard() {
     // Task-level loading spinner
     if (isTaskLoading) {
       return (
-        <div className="analyzing">
-          <div className="analyzing__spinner" />
-          <div className="analyzing__text">Preparing your mission brief...</div>
-          <div className="analyzing__subtext">
+        <div className="hud-analyzing">
+          <div className="hud-analyzing__spinner" />
+          <div className="hud-analyzing__text">Preparing your mission brief...</div>
+          <div className="hud-analyzing__subtext">
             AI is analyzing task scope, identifying relevant files, checking for known traps
           </div>
         </div>
@@ -302,21 +302,17 @@ export default function Dashboard() {
     // Task-level error (non-fatal — stays in dashboard)
     if (taskError) {
       return (
-        <div className="analyzing">
+        <div className="hud-analyzing">
           <div style={{ fontSize: '48px', marginBottom: '16px' }}>
-            <i className="bx bx-error-circle" style={{ color: 'var(--color-warning)' }} />
+            ⚠
           </div>
-          <div className="analyzing__text">{taskError}</div>
-          <div className="analyzing__subtext" style={{ marginBottom: '16px' }}>
+          <div className="hud-analyzing__text">{taskError}</div>
+          <div className="hud-analyzing__subtext" style={{ marginBottom: '16px' }}>
             The AI providers could not generate a mission brief. Check the browser console for details.
           </div>
           <button
             onClick={() => { setTaskError(null); setActiveView('task'); }}
-            style={{
-              padding: '8px 24px', background: 'var(--color-accent)', color: 'white',
-              border: 'none', borderRadius: 'var(--radius-md)', cursor: 'pointer',
-              fontWeight: 600, fontFamily: 'var(--font-sans)', fontSize: '14px'
-            }}
+            className="hud-btn-primary"
           >
             Try Again
           </button>
@@ -343,18 +339,18 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="dashboard">
+    <div className="hud-dashboard">
       <Sidebar
         data={enrichedData}
         activeView={activeView}
         onViewChange={setActiveView}
         selectedTask={selectedTask}
       />
-      <div className="main">
-        <div className="main__header">
-          <h2 className="main__title">{VIEW_TITLES[activeView] || 'Waypoint'}</h2>
+      <div className="hud-main">
+        <div className="hud-main__header">
+          <h1 className="hud-main__title">{VIEW_TITLES[activeView] || 'Waypoint'}</h1>
         </div>
-        <div className="main__content">
+        <div className="hud-main__content">
           {renderView()}
         </div>
         <AIBar message={getAIMessage()} />

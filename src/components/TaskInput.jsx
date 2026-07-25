@@ -1,20 +1,20 @@
 import { useState } from 'react'
 
 const EXAMPLE_TASKS = [
+  'Fix Login Bug',
   'Add Google OAuth',
-  'Fix login bug',
-  'Add dark mode',
-  'Improve performance',
+  'Refactor Billing API',
+  'Improve Performance',
+  'Update Dependencies',
 ]
 
 export default function TaskInput({ onSubmit }) {
   const [task, setTask] = useState('')
+  const [focused, setFocused] = useState(false)
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    if (task.trim()) {
-      onSubmit(task.trim())
-    }
+    if (task.trim()) onSubmit(task.trim())
   }
 
   const handleChipClick = (taskName) => {
@@ -23,32 +23,42 @@ export default function TaskInput({ onSubmit }) {
   }
 
   return (
-    <div className="task-input">
-      <h2 className="task-input__heading">What are you trying to do?</h2>
-      <p className="task-input__subheading">
-        Describe your task and Waypoint will identify exactly which files, concepts, and risks you need to know about.
-      </p>
-
-      <form onSubmit={handleSubmit}>
-        <input
-          type="text"
-          className="task-input__field"
-          placeholder="e.g., Add Google OAuth, Fix login bug, Refactor billing..."
-          value={task}
-          onChange={(e) => setTask(e.target.value)}
-          autoFocus
-        />
+    <div className="hud-task">
+      {/* Holographic Textarea */}
+      <form onSubmit={handleSubmit} className="hud-task__form">
+        <div className={`hud-task__textarea-wrap ${focused ? 'hud-task__textarea-wrap--focused' : ''}`}>
+          <div className="hud-task__glow-border" />
+          <textarea
+            className="hud-task__textarea"
+            placeholder="What are you trying to do?"
+            value={task}
+            onChange={(e) => setTask(e.target.value)}
+            onFocus={() => setFocused(true)}
+            onBlur={() => setFocused(false)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault()
+                if (task.trim()) onSubmit(task.trim())
+              }
+            }}
+            autoFocus
+            rows={4}
+          />
+          {/* Corner accents */}
+          <span className="hud-task__corner hud-task__corner--tl" />
+          <span className="hud-task__corner hud-task__corner--tr" />
+          <span className="hud-task__corner hud-task__corner--bl" />
+          <span className="hud-task__corner hud-task__corner--br" />
+        </div>
       </form>
 
-      <div className="task-input__examples">
-        <div className="task-input__examples-label">Try an example</div>
-        <div className="task-input__chips">
-          {EXAMPLE_TASKS.map((t) => (
-            <button key={t} className="task-chip" onClick={() => handleChipClick(t)}>
-              {t}
-            </button>
-          ))}
-        </div>
+      {/* Suggestion Chips */}
+      <div className="hud-task__chips">
+        {EXAMPLE_TASKS.map((t) => (
+          <button key={t} className="hud-task__chip" onClick={() => handleChipClick(t)}>
+            {t}
+          </button>
+        ))}
       </div>
     </div>
   )
