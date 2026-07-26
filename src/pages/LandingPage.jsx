@@ -189,8 +189,8 @@ export default function LandingPage() {
       {/* Main content */}
       <main className="lp-main">
         {/* Logo */}
-        <div className="lp-logo-large" style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.5rem' }}>
-          <img src="/logo.png" alt="Waypoint Logo" style={{ width: '100%', maxWidth: '280px', borderRadius: '16px', boxShadow: '0 0 40px rgba(99, 102, 241, 0.2)' }} />
+        <div className="lp-logo-large" style={{ display: 'flex', justifyContent: 'center', marginBottom: 'min(1.5rem, 2vh)' }}>
+          <img src="/logo.png" alt="Waypoint Logo" style={{ maxHeight: '18vh', maxWidth: '100%', width: 'auto', objectFit: 'contain', borderRadius: '16px', boxShadow: '0 0 40px rgba(99, 102, 241, 0.2)' }} />
         </div>
 
         {/* Hero Card */}
