@@ -313,11 +313,17 @@ function DistrictPlatform({ position, size, name, isDimmed, maxHeight = 4 }) {
         />
         <Edges color={tint} />
       </mesh>
-      {/* Thin curb-line accent, subtle rather than a glowing wireframe grid */}
-      <mesh position={[0, 0.11, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <ringGeometry args={[Math.max(w, d) / 2 - 0.15, Math.max(w, d) / 2, 4]} />
-        <meshBasicMaterial color={tint} transparent opacity={isDimmed ? 0.05 : 0.18} toneMapped={false} />
-      </mesh>
+      {/* Neon border outline around district */}
+      <Line
+        points={[
+          [-w/2, 0.12, -d/2], [w/2, 0.12, -d/2], [w/2, 0.12, d/2], [-w/2, 0.12, d/2], [-w/2, 0.12, -d/2]
+        ]}
+        color={tint}
+        lineWidth={3}
+        transparent
+        opacity={isDimmed ? 0.05 : 0.6}
+        toneMapped={false}
+      />
       {/* District Label — reads like a street sign (solid tint background, clean type)
           floating above the tallest building in the district, fading with distance */}
       {!isDimmed && w > 4 && d > 4 && (
@@ -329,7 +335,7 @@ function DistrictPlatform({ position, size, name, isDimmed, maxHeight = 4 }) {
             padding: '4px 10px', borderRadius: '3px', border: '1px solid rgba(255,255,255,0.25)',
             transition: 'opacity 0.1s linear'
           }}>
-            {name}
+            {name} District
           </div>
         </Html>
       )}
@@ -887,6 +893,15 @@ function HoverInfoCard({ file }) {
   )
 }
 
+/* ── Difficulty Badge Color ────────────────────────────── */
+function difficultyColor(d) {
+  if (!d) return '#94a3b8'
+  const l = d.toLowerCase()
+  if (l === 'low') return '#4ade80'
+  if (l === 'medium' || l === 'moderate') return '#facc15'
+  return '#f87171' // high / critical
+}
+
 /* ── Main MapView ─────────────────────────────────────── */
 export default function MapView({ data, selectedTask }) {
   const [hoveredInfo, setHoveredInfo] = useState(null)
@@ -917,12 +932,40 @@ export default function MapView({ data, selectedTask }) {
           </Canvas>
         </Suspense>
 
-        {/* HUD Elements */}
+        {/* ── HUD: Top-left title panel ── */}
+        <div className="arch-title-overlay">
+          Immersive Code Metropolis Map
+        </div>
+
+        {/* ── HUD: Task tracking badge ── */}
         {selectedTask && (
-          <div style={{ position: 'absolute', top: '32px', left: '32px', background: 'rgba(76, 141, 255, 0.12)', border: '1px solid #4c8dff', padding: '12px 20px', borderRadius: '8px', color: '#4c8dff', fontWeight: 'bold', fontFamily: 'JetBrains Mono', backdropFilter: 'blur(4px)' }}>
+          <div style={{ position: 'absolute', top: '60px', left: '20px', background: 'rgba(76, 141, 255, 0.12)', border: '1px solid #4c8dff', padding: '8px 16px', borderRadius: '6px', color: '#4c8dff', fontWeight: 'bold', fontFamily: 'JetBrains Mono', fontSize: '0.75rem', backdropFilter: 'blur(4px)', zIndex: 10 }}>
             TRACKING: {selectedTask.name}
           </div>
         )}
+
+        {/* ── HUD: Top-right legend panel ── */}
+        <div className="arch-hud-panel arch-hud-panel--tr">
+          <div className="arch-hud-panel__label">Risk Legend</div>
+          {Object.entries(RISK_COLORS).map(([key, val]) => (
+            <div className="arch-hud-panel__row" key={key}>
+              <div className="arch-hud-panel__dot" style={{ background: val.hex }} />
+              {key.charAt(0).toUpperCase() + key.slice(1)}
+            </div>
+          ))}
+        </div>
+
+        {/* ── HUD: Bottom status bar ── */}
+        <div className="arch-status-bar">
+          <div className="arch-status-bar__stats">
+            <div>Files: <span>{data.repo.totalFiles}</span></div>
+            <div>Lines of Code: <span>{data.repo.totalLOC?.toLocaleString()}</span></div>
+            <div>Difficulty: <span style={{ color: difficultyColor(data.repo.difficulty), fontWeight: 600 }}>{data.repo.difficulty}</span></div>
+          </div>
+          <div className="arch-status-bar__desc">
+            Architecture map of {data.repo.name}. Building height = LOC, color = risk.
+          </div>
+        </div>
 
         <HoverInfoCard file={hoveredInfo} />
       </div>
