@@ -189,22 +189,9 @@ export default function LandingPage() {
       {/* Main content */}
       <main className="lp-main">
         {/* Logo */}
-        <div className="lp-logo">
-          <div className="lp-logo__icon">
-            <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-              <path d="M8 24L16 8L24 24" stroke="url(#logoGrad)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-              <path d="M11 19H21" stroke="url(#logoGrad)" strokeWidth="2" strokeLinecap="round"/>
-              <defs>
-                <linearGradient id="logoGrad" x1="8" y1="8" x2="24" y2="24" gradientUnits="userSpaceOnUse">
-                  <stop stopColor="#a855f7"/>
-                  <stop offset="1" stopColor="#6366f1"/>
-                </linearGradient>
-              </defs>
-            </svg>
-          </div>
-          <span className="lp-logo__text">Waypoint</span>
+        <div className="lp-logo-large" style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.5rem' }}>
+          <img src="/logo.png" alt="Waypoint Logo" style={{ width: '100%', maxWidth: '280px', borderRadius: '16px', boxShadow: '0 0 40px rgba(99, 102, 241, 0.2)' }} />
         </div>
-        <p className="lp-tagline">Every task starts with context.</p>
 
         {/* Hero Card */}
         <div className="lp-hero-card">

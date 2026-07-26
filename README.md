@@ -1,4 +1,8 @@
 <p align="center">
+  <img src="public/logo.png" width="200" alt="Waypoint Logo" style={{ borderRadius: '12px' }} />
+</p>
+
+<p align="center">
   <img src="https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=white" />
   <img src="https://img.shields.io/badge/Vite-8-646CFF?style=for-the-badge&logo=vite&logoColor=white" />
   <img src="https://img.shields.io/badge/Three.js-3D-000000?style=for-the-badge&logo=three.js&logoColor=white" />

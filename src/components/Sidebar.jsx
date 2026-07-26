@@ -77,19 +77,8 @@ export default function Sidebar({ data, activeView, onViewChange, selectedTask }
     <aside className="hud-sidebar">
       {/* Logo */}
       <div className="hud-sidebar__logo">
-        <div className="hud-sidebar__logo-icon">
-          <svg width="18" height="18" viewBox="0 0 32 32" fill="none">
-            <path d="M8 24L16 8L24 24" stroke="url(#sbLogoGrad)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-            <path d="M11 19H21" stroke="url(#sbLogoGrad)" strokeWidth="2" strokeLinecap="round"/>
-            <defs>
-              <linearGradient id="sbLogoGrad" x1="8" y1="8" x2="24" y2="24" gradientUnits="userSpaceOnUse">
-                <stop stopColor="#a855f7"/>
-                <stop offset="1" stopColor="#6366f1"/>
-              </linearGradient>
-            </defs>
-          </svg>
-        </div>
-        <span className="hud-sidebar__logo-text">Waypoint</span>
+        <img src="/favicon.png" alt="Waypoint Logo" style={{ width: '28px', height: '28px', borderRadius: '6px' }} />
+        <span className="hud-sidebar__logo-text" style={{ marginLeft: '10px' }}>Waypoint</span>
       </div>
 
       {/* Repo name if available */}
