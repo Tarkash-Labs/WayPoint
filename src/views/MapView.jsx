@@ -6,18 +6,22 @@ import * as THREE from 'three'
 import { treemap, hierarchy, treemapSquarify } from 'd3-hierarchy'
 import ErrorBoundary from '../components/ErrorBoundary'
 
-/* ── Constants & Theme ──────────────────────────────── */
+/* ── Constants & Theme ─────────────────────────────────
+   Dusk-skyline redesign: risk tiers now map to believable window-light
+   colors (alarm red / sodium amber / incandescent warm / fluorescent cool)
+   instead of full-building neon emissive, so the risk signal survives as
+   "what color are this building's windows" rather than "how much does it glow." */
 const RISK_COLORS = {
-  critical: { hex: '#ef4444', emissive: '#ef4444', intensity: 2.0 },
-  high: { hex: '#f97316', emissive: '#f97316', intensity: 1.5 },
-  medium: { hex: '#eab308', emissive: '#eab308', intensity: 1.0 },
-  low: { hex: '#3b82f6', emissive: '#3b82f6', intensity: 0.5 },
+  critical: { hex: '#ff4d4d', emissive: '#ff4d4d', intensity: 1.4 }, // alarm-red windows
+  high: { hex: '#ffab4a', emissive: '#ffab4a', intensity: 1.1 },     // sodium amber
+  medium: { hex: '#ffd98a', emissive: '#ffd98a', intensity: 0.85 },  // warm incandescent
+  low: { hex: '#bfe6ff', emissive: '#bfe6ff', intensity: 0.6 },      // cool fluorescent
 }
 
 const MISSION_COLORS = {
-  target: { hex: '#fbbf24', emissive: '#fbbf24', intensity: 3.0 },
-  trap: { hex: '#dc2626', emissive: '#ff0000', intensity: 4.0 },
-  dim: { hex: '#1e1b4b', emissive: '#000000', intensity: 0.1 },
+  target: { hex: '#ffd166', emissive: '#ffd166', intensity: 2.0 }, // rooftop search beacon
+  trap: { hex: '#ff3b30', emissive: '#ff3b30', intensity: 2.2 },   // hazard beacon
+  dim: { hex: '#20242c', emissive: '#000000', intensity: 0.08 },
 }
 
 function getRiskTier(score) {
@@ -27,8 +31,9 @@ function getRiskTier(score) {
   return 'low'
 }
 
-// Muted, distinct district tints so each folder reads as its own "neighborhood"
-const DISTRICT_PALETTE = ['#6366f1', '#06b6d4', '#8b5cf6', '#14b8a6', '#f59e0b', '#ec4899', '#22c55e', '#3b82f6']
+// Muted, awning/signage-toned district tints so each folder reads as its own
+// real neighborhood rather than a saturated data-viz category color
+const DISTRICT_PALETTE = ['#c9a24b', '#5b8a72', '#9c5b46', '#5a7ba6', '#8a6d9c', '#b0724f', '#6b9c8f', '#a67c52']
 function getDistrictColor(name) {
   let s = 0
   for (let i = 0; i < name.length; i++) s += name.charCodeAt(i)
@@ -93,9 +98,9 @@ function CyberBuilding({
   // Shader inject for procedural windows
   const customMaterial = useMemo(() => {
     const mat = new THREE.MeshStandardMaterial({
-      color: '#030308',
-      roughness: 0.7, // Matte building exterior
-      metalness: 0.3,
+      color: '#4d4f56', // concrete/glass facade, not a black neon shell
+      roughness: 0.85,  // matte concrete reads as real material under dusk light
+      metalness: 0.12,
       transparent: true,
       opacity: targetOpacity
     })
@@ -219,27 +224,48 @@ function CyberBuilding({
           </mesh>
         </group>
       ) : (
-        // Standard Block
-        <mesh ref={meshRef} position={[0, h / 2, 0]} material={customMaterial}>
-          <boxGeometry args={[w, h, d]} />
-          <Edges threshold={15} color={edgeColor} />
-        </mesh>
+        // Standard Block — plus a small rooftop mechanical unit, since real
+        // flat-roofed towers are almost never a bare box
+        <group>
+          <mesh ref={meshRef} position={[0, h / 2, 0]} material={customMaterial}>
+            <boxGeometry args={[w, h, d]} />
+            <Edges threshold={15} color={edgeColor} />
+          </mesh>
+          <mesh position={[w * 0.22, h + 0.15, d * 0.2]}>
+            <boxGeometry args={[Math.max(w * 0.22, 0.5), 0.3, Math.max(d * 0.18, 0.5)]} />
+            <meshStandardMaterial color="#2a2b2f" roughness={0.7} metalness={0.2} />
+          </mesh>
+        </group>
       )}
 
-      {/* Holographic Antenna */}
+      {/* Rooftop mast — dull antenna/utility mast with a small aviation warning light,
+          the kind every real skyline has, rather than a colored energy beam */}
       {hasAntenna && (
-        <mesh position={[0, h + 1, 0]}>
-          <cylinderGeometry args={[0.02, 0.05, 2]} />
-          <meshBasicMaterial color={targetEmissive} toneMapped={false} />
-        </mesh>
+        <group position={[0, h, 0]}>
+          <mesh position={[0, 1, 0]}>
+            <cylinderGeometry args={[0.02, 0.05, 2]} />
+            <meshStandardMaterial color="#2a2b2f" roughness={0.6} metalness={0.5} />
+          </mesh>
+          <mesh position={[0, 2.05, 0]}>
+            <sphereGeometry args={[0.06, 8, 8]} />
+            <meshBasicMaterial color="#ff3b30" toneMapped={false} />
+          </mesh>
+        </group>
       )}
 
-      {/* Trap Pulse */}
+      {/* Hazard marker — a low warning beacon + thin barrier ring at street level,
+          reading as a cordoned-off building rather than a glitching wireframe */}
       {isMissionTrap && (
-        <mesh position={[0, h / 2, 0]}>
-          <boxGeometry args={[w * 1.1, h * 1.02, d * 1.1]} />
-          <meshBasicMaterial color="#ff0000" wireframe transparent opacity={0.3} />
-        </mesh>
+        <group>
+          <mesh position={[0, h + 0.3, 0]}>
+            <sphereGeometry args={[0.15, 10, 10]} />
+            <meshBasicMaterial color="#ff3b30" toneMapped={false} />
+          </mesh>
+          <mesh position={[0, 0.15, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+            <ringGeometry args={[Math.max(w, d) / 2 + 0.3, Math.max(w, d) / 2 + 0.6, 24]} />
+            <meshBasicMaterial color="#ff3b30" transparent opacity={0.5} side={THREE.DoubleSide} toneMapped={false} />
+          </mesh>
+        </group>
       )}
 
       {/* Hover Base Glow */}
@@ -274,33 +300,33 @@ function DistrictPlatform({ position, size, name, isDimmed, maxHeight = 4 }) {
 
   return (
     <group ref={groupRef} position={position}>
-      {/* Base platform — subtly tinted per district so folders read as distinct neighborhoods */}
+      {/* Base platform — matte pavement block; district tint lives on the curb edge only,
+          so folders read as distinct city blocks instead of glowing data plazas */}
       <mesh position={[0, 0.05, 0]} receiveShadow>
         <boxGeometry args={[w, 0.1, d]} />
         <meshStandardMaterial
-          color="#050508"
-          emissive={tint}
-          emissiveIntensity={isDimmed ? 0.02 : 0.06}
-          roughness={0.75}
-          metalness={0.3}
+          color="#3a3a3d"
+          roughness={0.9}
+          metalness={0.05}
           transparent
           opacity={isDimmed ? 0.3 : 1}
         />
         <Edges color={tint} />
       </mesh>
-      {/* Glowing boundary line, colored to match district */}
+      {/* Thin curb-line accent, subtle rather than a glowing wireframe grid */}
       <mesh position={[0, 0.11, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <planeGeometry args={[w - 0.2, d - 0.2]} />
-        <meshBasicMaterial color={tint} wireframe transparent opacity={isDimmed ? 0.08 : 0.35} toneMapped={false} />
+        <ringGeometry args={[Math.max(w, d) / 2 - 0.15, Math.max(w, d) / 2, 4]} />
+        <meshBasicMaterial color={tint} transparent opacity={isDimmed ? 0.05 : 0.18} toneMapped={false} />
       </mesh>
-      {/* District Label — floats above the tallest building in this district, fades with distance */}
+      {/* District Label — reads like a street sign (solid tint background, clean type)
+          floating above the tallest building in the district, fading with distance */}
       {!isDimmed && w > 4 && d > 4 && (
         <Html position={[0, maxHeight, 0]} center distanceFactor={45} style={{ pointerEvents: 'none' }}>
           <div ref={labelRef} style={{
-            color: tint, fontFamily: 'JetBrains Mono', fontSize: '13px', fontWeight: 600,
-            textTransform: 'uppercase', letterSpacing: '2px', whiteSpace: 'nowrap',
-            textShadow: `0 0 8px ${tint}, 0 0 2px #000`, background: 'rgba(2,2,8,0.55)',
-            padding: '3px 9px', borderRadius: '4px', border: `1px solid ${tint}55`,
+            color: '#fff', fontFamily: 'Inter, system-ui, sans-serif', fontSize: '12px', fontWeight: 600,
+            letterSpacing: '0.5px', whiteSpace: 'nowrap',
+            background: tint, boxShadow: '0 2px 6px rgba(0,0,0,0.35)',
+            padding: '4px 10px', borderRadius: '3px', border: '1px solid rgba(255,255,255,0.25)',
             transition: 'opacity 0.1s linear'
           }}>
             {name}
@@ -326,9 +352,13 @@ function HovercraftTraffic({ count = 200, bounds }) {
       const axis = Math.random() > 0.5 ? 'x' : 'z'
       const dir = Math.random() > 0.5 ? 1 : -1
 
-      // Kept to a single muted cyan family — risk color is reserved for buildings only,
-      // so traffic reads as ambient scenery rather than competing data
-      let color = Math.random() > 0.85 ? '#0891b2' : '#22d3ee'
+      // Real vehicle-color distribution — mostly neutral body colors with a
+      // headlight-warm or taillight-red glow, so traffic reads as actual cars
+      // rather than a swarm of uniform glowing data blocks
+      const bodyColors = ['#e8e8e8', '#c9ccd1', '#2a2b2f', '#1c1d22', '#8a1f1f', '#2e4a6b']
+      let color = isGround
+        ? bodyColors[Math.floor(Math.random() * bodyColors.length)]
+        : (dir > 0 ? '#ffcf8a' : '#ff4d4d') // sky traffic reads by heading: warm headlight vs red taillight
 
       return {
         pos: new THREE.Vector3(
@@ -339,7 +369,7 @@ function HovercraftTraffic({ count = 200, bounds }) {
         axis,
         dir,
         speed,
-        color: new THREE.Color(color).multiplyScalar(8), // toned down so it doesn't outshine building risk colors
+        color: new THREE.Color(color).multiplyScalar(isGround ? 1 : 1.6),
         scale: isGround ? [0.6, 0.2, 0.6] : [0.4, 0.2, 0.4]
       }
     })
@@ -396,8 +426,8 @@ function DependencyBridges({ buildings, isMissionActive, targetPaths }) {
       if (b1 === b2) continue
 
       const isTarget = isMissionActive && targetPaths.includes(b1.file.path) && targetPaths.includes(b2.file.path)
-      const color = isTarget ? '#fbbf24' : '#06b6d4'
-      const opacity = isMissionActive && !isTarget ? 0.05 : 0.6
+      const color = isTarget ? '#ffd166' : '#7c94ad' // steel-cable tone, reads as real infrastructure not a data laser
+      const opacity = isMissionActive && !isTarget ? 0.05 : 0.35
 
       // Calculate arc
       const p1 = new THREE.Vector3(...b1.position)
@@ -465,7 +495,7 @@ function GPSRoute({ buildings, targetPaths }) {
   return (
     <Line
       points={routePoints}
-      color="#10b981"
+      color="#4c8dff"
       lineWidth={4}
       toneMapped={false}
     />
@@ -535,13 +565,13 @@ function CyberEffects() {
   return (
     <EffectComposer disableNormalPass multisampling={4}>
       <Bloom
-        luminanceThreshold={0.8} // High threshold: mostly windows and traffic glow
-        luminanceSmoothing={0.1}
-        intensity={1.5}
-        radius={0.7}
+        luminanceThreshold={0.85} // Only real point-lights (windows, beacons, headlights) bloom
+        luminanceSmoothing={0.15}
+        intensity={0.8}
+        radius={0.5}
       />
-      <Vignette offset={0.3} darkness={0.8} />
-      <Noise opacity={0.02} />
+      <Vignette offset={0.35} darkness={0.5} />
+      <Noise opacity={0.015} />
     </EffectComposer>
   )
 }
@@ -572,17 +602,17 @@ function AtmosphericParticles() {
   return (
     <instancedMesh ref={mesh} args={[null, null, count]}>
       <planeGeometry args={[0.2, 0.2]} />
-      <meshBasicMaterial color="#ffffff" transparent opacity={0.1} depthWrite={false} />
+      <meshBasicMaterial color="#ffe9c7" transparent opacity={0.1} depthWrite={false} />
     </instancedMesh>
   )
 }
 
-/* ── Atmospheric Horizon (gradient sky, not a flat void) ──── */
+/* ── Atmospheric Horizon (dusk gradient sky with a low sun) ──── */
 function CityAtmosphere() {
   const material = useMemo(() => new THREE.ShaderMaterial({
     uniforms: {
-      topColor: { value: new THREE.Color('#04040c') },
-      bottomColor: { value: new THREE.Color('#2a1258') },
+      topColor: { value: new THREE.Color('#12213f') },   // deep dusk blue overhead
+      bottomColor: { value: new THREE.Color('#ff8a5c') }, // warm sunset band at the horizon
       offset: { value: 15 },
       exponent: { value: 0.7 },
     },
@@ -611,9 +641,20 @@ function CityAtmosphere() {
   }), [])
 
   return (
-    <mesh material={material} renderOrder={-10}>
-      <sphereGeometry args={[400, 24, 24]} />
-    </mesh>
+    <group>
+      <mesh material={material} renderOrder={-10}>
+        <sphereGeometry args={[400, 24, 24]} />
+      </mesh>
+      {/* Low sun — the one warm light source everything else keys off */}
+      <mesh position={[160, 42, -300]} renderOrder={-9}>
+        <sphereGeometry args={[14, 24, 24]} />
+        <meshBasicMaterial color="#ffe9c7" toneMapped={false} fog={false} />
+      </mesh>
+      <mesh position={[160, 42, -300]} renderOrder={-9}>
+        <sphereGeometry args={[30, 24, 24]} />
+        <meshBasicMaterial color="#ffb672" transparent opacity={0.25} toneMapped={false} fog={false} depthWrite={false} />
+      </mesh>
+    </group>
   )
 }
 
@@ -702,16 +743,16 @@ function CityScene({ data, selectedTask, onHoverInfo }) {
 
   return (
     <>
-      <color attach="background" args={['#020205']} />
-      <fog attach="fog" args={['#020205', 45, 180]} />
+      <color attach="background" args={['#12213f']} />
+      <fog attach="fog" args={['#5c5a68', 45, 180]} />
       <CityAtmosphere />
-      <ambientLight intensity={0.25} color="#4f46e5" />
-      <hemisphereLight args={['#312e81', '#020205', 0.5]} />
+      <ambientLight intensity={0.35} color="#5a6b8c" />
+      <hemisphereLight args={['#3a4a7a', '#1c1d22', 0.6]} />
 
-      {/* City Lights */}
-      <pointLight position={[0, 60, 0]} intensity={1.5} color="#c084fc" distance={150} />
-      {/* Low fill light so building bases & floor near the camera stay readable */}
-      <pointLight position={[0, 8, 40]} intensity={0.6} color="#818cf8" distance={120} />
+      {/* Key light — warm sunset glow keyed to the sun disc */}
+      <pointLight position={[160, 60, -250]} intensity={2.0} color="#ffb672" distance={400} />
+      {/* Low cool fill so building bases & floor near the camera stay readable */}
+      <pointLight position={[0, 8, 40]} intensity={0.6} color="#8fb3d9" distance={120} />
 
       {/* Floor */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.1, 0]}>
@@ -720,24 +761,25 @@ function CityScene({ data, selectedTask, onHoverInfo }) {
           blur={[400, 100]}
           resolution={1024}
           mixBlur={1}
-          mixStrength={2}
-          roughness={0.25}
+          mixStrength={1.2}
+          roughness={0.4}
           depthScale={1.2}
-          color="#0a0a18"
-          metalness={0.7}
-          mirror={0.6}
+          color="#1c1d22"
+          metalness={0.35}
+          mirror={0.35}
         />
       </mesh>
-      {/* Neon grid overlay — this is what actually reads as "ground" from a distance */}
+      {/* Pavement seam lines — barely-visible gray grid instead of a glowing Tron overlay,
+          just enough structure to read as paved ground from a distance */}
       <Grid
         position={[0, -0.05, 0]}
         args={[gridSize + 100, gridSize + 100]}
         cellSize={2}
-        cellThickness={0.5}
-        cellColor="#1e1b4b"
+        cellThickness={0.4}
+        cellColor="#3a3a3d"
         sectionSize={10}
-        sectionThickness={1}
-        sectionColor="#4338ca"
+        sectionThickness={0.6}
+        sectionColor="#55565c"
         fadeDistance={140}
         fadeStrength={1.5}
         infiniteGrid
@@ -748,7 +790,7 @@ function CityScene({ data, selectedTask, onHoverInfo }) {
           separate neighborhoods instead of bare reflective floor. */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 0]}>
         <planeGeometry args={[gridSize + 6, gridSize + 6]} />
-        <meshStandardMaterial color="#0b0b16" roughness={0.55} metalness={0.35} transparent opacity={0.92} />
+        <meshStandardMaterial color="#26272c" roughness={0.75} metalness={0.1} transparent opacity={0.95} />
       </mesh>
 
       {/* Environment Elements */}
@@ -815,8 +857,8 @@ function HoverInfoCard({ file }) {
   return (
     <div className="arch-hover-card" style={{
       position: 'absolute', bottom: '32px', right: '32px',
-      background: 'rgba(5, 5, 16, 0.85)', backdropFilter: 'blur(12px)',
-      border: '1px solid rgba(79, 70, 229, 0.4)', borderRadius: '12px',
+      background: 'rgba(15, 17, 26, 0.85)', backdropFilter: 'blur(12px)',
+      border: '1px solid rgba(76, 141, 255, 0.4)', borderRadius: '12px',
       padding: '20px', width: '300px', color: '#fff',
       boxShadow: '0 10px 30px rgba(0,0,0,0.5)',
       animation: 'fadeUp 0.3s ease-out'
@@ -824,7 +866,7 @@ function HoverInfoCard({ file }) {
       <style>{`
         @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
       `}</style>
-      <div style={{ fontSize: '10px', color: '#818cf8', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>
+      <div style={{ fontSize: '10px', color: '#4c8dff', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>
         {file.directory || 'Root'} District
       </div>
       <div style={{ fontSize: '16px', fontWeight: 'bold', marginBottom: '16px', wordBreak: 'break-all' }}>
@@ -858,7 +900,7 @@ export default function MapView({ data, selectedTask }) {
         <Suspense fallback={
           <div className="hud-analyzing" style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', textAlign: 'center' }}>
             <div className="hud-analyzing__spinner" style={{ margin: '0 auto 16px', width: '32px', height: '32px', border: '3px solid #4f46e5', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
-            <div className="hud-analyzing__text" style={{ color: '#fff', fontFamily: 'JetBrains Mono' }}>Booting OS Environment...</div>
+            <div className="hud-analyzing__text" style={{ color: '#fff', fontFamily: 'JetBrains Mono' }}>Loading city view…</div>
           </div>
         }>
           <Canvas
@@ -877,8 +919,8 @@ export default function MapView({ data, selectedTask }) {
 
         {/* HUD Elements */}
         {selectedTask && (
-          <div style={{ position: 'absolute', top: '32px', left: '32px', background: 'rgba(16, 185, 129, 0.1)', border: '1px solid #10b981', padding: '12px 20px', borderRadius: '8px', color: '#10b981', fontWeight: 'bold', fontFamily: 'JetBrains Mono', backdropFilter: 'blur(4px)' }}>
-            MISSION OVERRIDE ACTIVE: {selectedTask.name}
+          <div style={{ position: 'absolute', top: '32px', left: '32px', background: 'rgba(76, 141, 255, 0.12)', border: '1px solid #4c8dff', padding: '12px 20px', borderRadius: '8px', color: '#4c8dff', fontWeight: 'bold', fontFamily: 'JetBrains Mono', backdropFilter: 'blur(4px)' }}>
+            TRACKING: {selectedTask.name}
           </div>
         )}
 

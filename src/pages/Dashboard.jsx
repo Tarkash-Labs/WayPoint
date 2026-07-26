@@ -7,6 +7,7 @@ import MissionBrief from '../views/MissionBrief'
 import OnboardingView from '../views/OnboardingView'
 import HotspotsView from '../views/HotspotsView'
 import MapView from '../views/MapView'
+import GalaxyView from '../views/GalaxyView'
 import AIBar from '../components/AIBar'
 import { parseGitHubUrl, fetchRepoMeta, fetchFileTree, buildRepoData } from '../services/github'
 import { generateRepoAnalysis } from '../services/gemini'
@@ -18,6 +19,7 @@ const VIEW_TITLES = {
   onboarding: 'AI Onboarding',
   hotspots: 'Risk Hotspots',
   map: 'Architecture Map',
+  galaxy: 'Dependency Galaxy',
 }
 
 export default function Dashboard() {
@@ -262,6 +264,9 @@ export default function Dashboard() {
     if (activeView === 'map') {
       return `Architecture map of <strong>${d.repo.name}</strong>. Building height = lines of code. Color = risk level.`
     }
+    if (activeView === 'galaxy') {
+      return `Dependency galaxy of <strong>${d.repo.name}</strong>. Constellation nodes represent files and clusters represent directories.`
+    }
     return 'Ready.'
   }
 
@@ -333,6 +338,8 @@ export default function Dashboard() {
         return <HotspotsView data={enrichedData} />
       case 'map':
         return <MapView data={enrichedData} selectedTask={selectedTask} />
+      case 'galaxy':
+        return <GalaxyView data={enrichedData} selectedTask={selectedTask} />
       default:
         return <TaskInput onSubmit={handleTaskSubmit} />
     }
