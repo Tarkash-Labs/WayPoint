@@ -1,0 +1,24 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/nvidia/:path*",
+      "destination": "https://integrate.api.nvidia.com/:path*"
+    },
+    {
+      "source": "/api/gemini/:path*",
+      "destination": "https://generativelanguage.googleapis.com/:path*"
+    },
+    {
+      "source": "/api/github/:path*",
+      "destination": "https://api.github.com/:path*"
+    },
+    {
+      "source": "/api/raw-github/:path*",
+      "destination": "https://raw.githubusercontent.com/:path*"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}
